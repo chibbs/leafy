@@ -20,7 +20,7 @@ public class Leaf_Classification implements PlugInFilter {
         int N = ip.getHeight();
         
         // iterate
-        for (int u = 1; u < M; u++) {
+        for (int u = 0; u < M; u++) {
             for (int v = 0; v < N; v++) {
                 int p = ip.getPixel( u, v );
                 ip.putPixel( u, v, 255-p );
