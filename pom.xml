@@ -13,7 +13,7 @@
 	</parent>
 
 	<groupId>net.larla.leafy</groupId>
-	<artifactId>Leafy_</artifactId>
+	<artifactId>Leafy</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
 
 	<name>Leafy - Leaf classification</name>
@@ -66,7 +66,7 @@
 	</ciManagement>
 
 	<properties>
-		<main-class>net.larla.leafy.Leafy</main-class>
+		<main-class>net.larla.leafy.Leaf_Classification</main-class>
 		<package>net.larla.leafy</package>
 		<license.licenseName>cc0</license.licenseName>
 		<license.copyrightOwners>N/A</license.copyrightOwners>
