@@ -1,4 +1,4 @@
-package net.larla.leafy;
+
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -52,7 +52,7 @@ public class Leaf_Classification
 		new ImageJ();
 
 		// open the Clown sample
-		ImagePlus image = IJ.openImage("http://imagej.net/images/clown.jpg");
+		ImagePlus image = IJ.openImage("http://imagej.net/images/Tree_Rings.jpg");
 		image.show();
 
 		// run the plugin

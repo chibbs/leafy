@@ -12,8 +12,8 @@
 		<relativePath />
 	</parent>
 
-	<groupId>net.larla.leafy</groupId>
-	<artifactId>Leafy</artifactId>
+	<groupId>leafy</groupId>
+	<artifactId>Leaf_Classification</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
 
 	<name>Leafy - Leaf classification</name>
@@ -66,8 +66,7 @@
 	</ciManagement>
 
 	<properties>
-		<main-class>net.larla.leafy.Leaf_Classification</main-class>
-		<package>net.larla.leafy</package>
+		<main-class>Leaf_Classification</main-class>
 		<license.licenseName>cc0</license.licenseName>
 		<license.copyrightOwners>N/A</license.copyrightOwners>
 		<license.projectName>ImageJ software for multidimensional image processing and analysis.</license.projectName>
