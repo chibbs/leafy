@@ -173,6 +173,7 @@ public class Leafy implements PlugInFilter {
 		Class<?> clazz = Leafy.class;
 		String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
 		String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length());
+		//String pluginsDir = "C:/Users/Laura/Desktop/ImageJ.app/plugins/";
 		System.setProperty("plugins.dir", pluginsDir);
 
 		// start ImageJ
