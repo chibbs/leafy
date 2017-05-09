@@ -5,9 +5,7 @@ import ij.ImagePlus;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
 
-public class Leaf_Classification
-    implements PlugInFilter
-{
+public class Leaf_Classification implements PlugInFilter {
 
     @Override
     public int setup( String arg, ImagePlus imp )
@@ -22,7 +20,7 @@ public class Leaf_Classification
         int N = ip.getHeight();
         
         // iterate
-        for (int u = 0; u < M; u++) {
+        for (int u = 1; u < M; u++) {
             for (int v = 0; v < N; v++) {
                 int p = ip.getPixel( u, v );
                 ip.putPixel( u, v, 255-p );
@@ -45,7 +43,6 @@ public class Leaf_Classification
 		Class<?> clazz = Leaf_Classification.class;
 		String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
 		String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length());
-		//String pluginsDir = "C:/Users/Laura/Desktop/ImageJ.app/plugins/";
 		System.setProperty("plugins.dir", pluginsDir);
 
 		// start ImageJ
