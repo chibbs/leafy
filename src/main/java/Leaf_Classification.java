@@ -3,25 +3,20 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.Shape;
-import java.awt.geom.Point2D;
-import java.util.List;
 
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
-import ij.plugin.filter.PlugInFilter;
-import ij.process.ImageProcessor;
-import ij.gui.GenericDialog;
 import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
+import ij.plugin.filter.PlugInFilter;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
 import imagingbook.pub.regions.Contour;
-import imagingbook.pub.regions.ContourOverlay;
 import imagingbook.pub.regions.RegionContourLabeling;
 import imagingbook.pub.regions.RegionLabeling.BinaryRegion;
-import imagingbook.pub.threshold.global.OtsuThresholder;
 
 public class Leaf_Classification implements PlugInFilter {
 
@@ -32,7 +27,7 @@ public class Leaf_Classification implements PlugInFilter {
     public int setup( String arg, ImagePlus imp )
     {
         this.imp = imp;
-        return DOES_RGB; // this plugin accepts rgb/8-bit-grayscale images
+        return DOES_RGB; // this plugin accepts rgb images
     }
 
     @Override
@@ -41,10 +36,6 @@ public class Leaf_Classification implements PlugInFilter {
         ColorProcessor cp = (ColorProcessor) ip;
         cp.setRGBWeights( 0, 0, 1 );
         ByteProcessor bp = cp.convertToByteProcessor();
-        //(new ImagePlus(imp.getShortTitle() + " (gray)", bp)).show();
-        
-        /*bp.autoThreshold();
-        bp.invert();*/
         
         int th = bp.getAutoThreshold();
         IJ.log( "Creating binary image... Threshold: " + th );
@@ -54,7 +45,6 @@ public class Leaf_Classification implements PlugInFilter {
         
         
         vorf = new ImagePlus("Vorverarbeitung (binarized)", bp);
-        //vorf.show();
         
         /*
         IJ.log("Apply morphologic filter: Close");
@@ -65,55 +55,11 @@ public class Leaf_Classification implements PlugInFilter {
         vorf = new ImagePlus("Vorverarbeitung (closed)", bp);
         vorf.show();
         
-        /*OtsuThresholder thr = new OtsuThresholder();
-        int q = thr.getThreshold(bp);
-        if (q >= 0) {
-            IJ.log("threshold = " + q);
-            bp.threshold(q);
-        }
-        else {
-            IJ.showMessage("no threshold found");
-        }  */     
-        
-        // Make sure we have a proper byte image:
-        //ByteProcessor bp = (ByteProcessor) ip.convertToByteProcessor();
-        
         // Create the region labeler / contour tracer:
         IJ.log( "Searching for leaf region..." );
         RegionContourLabeling segmenter = new RegionContourLabeling(bp);
         
-        // Get the list of detected regions (sort by size):
-        /*List<BinaryRegion> regions = segmenter.getRegions(true);
-        if (regions.isEmpty()) {
-            IJ.error("No regions detected!");
-            return;
-        }
-
-        if (listRegions) {
-            IJ.log("Detected regions: " + regions.size());
-            for (BinaryRegion r: regions) {
-                IJ.log(r.toString());
-            }
-        }
-        
-        if (listContourPoints) {
-            // Get the outer contour of the largest region:
-            BinaryRegion largestRegion = regions.get(0);
-            Contour oc =  largestRegion.getOuterContour();
-            IJ.log("Points along outer contour of largest region:");
-            Point2D[] points = oc.getPointArray();
-            for (int i = 0; i < points.length; i++) {
-                Point2D p = points[i];
-                IJ.log("Point " + i + ": " + p.toString());
-            }
-            
-            // Get all inner contours of the largest region:
-            List<Contour> ics = largestRegion.getInnerContours();
-            IJ.log("Inner regions (holes): " + ics.size());
-        }
-        */
-        
-        // get leaf region
+        // get leaf region (should be the biggest region, so first in list)
         BinaryRegion leaf = segmenter.getRegions( true ).get( 0 );
         IJ.log( "Leaf: " + leaf.toString() );
         
@@ -125,8 +71,6 @@ public class Leaf_Classification implements PlugInFilter {
         test3.show();
         
         // Display the contours
-            //ImageProcessor lip = segmenter.makeLabelImage(false);
-            //ImagePlus lim = new ImagePlus("Region labels and contours", lip);
         Contour oc = leaf.getOuterContour();
         Overlay test = new Overlay();
         BasicStroke stroke = new BasicStroke(1.0f);
@@ -151,15 +95,6 @@ public class Leaf_Classification implements PlugInFilter {
         bp.setRoi( bbroi );
         ip = bp.crop();
         
-            /*Overlay oly = new ContourOverlay(segmenter);
-            imp.setOverlay(oly);
-            imp.show();*/
-
-        
-//      BinaryRegion r = segmenter.getRegions().get(0);
-//      for (java.awt.Point p : r) {
-//          
-//      }
     }
     
 
