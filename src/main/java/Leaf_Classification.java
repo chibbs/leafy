@@ -50,7 +50,9 @@ public class Leaf_Classification implements PlugInFilter {
         vorf = new ImagePlus(imp.getShortTitle() + " (inverted)", bp);
         vorf.show();*/
         
-        bp.threshold( th );     // background = white
+        //bp.threshold( th );     // background = white       -> IsoData algorithm
+        bp.setBackgroundValue( 255 );   // used for rotate and scale
+        bp.setAutoThreshold(bp.ISODATA, bp.OVER_UNDER_LUT );
         vorf.hide();
         vorf = new ImagePlus(imp.getShortTitle() + " (binarized)", bp);
         vorf.show();
@@ -121,6 +123,10 @@ public class Leaf_Classification implements PlugInFilter {
         rm.add( imp, roi, 1 );
         rm.add( imp, bbroi, 2 );
         rm.add( imp, centerp, 3 );
+        
+        
+        // include LeafJ
+        bp.setBinaryThreshold();
     }
     
 
