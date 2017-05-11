@@ -3,14 +3,17 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.Shape;
+import java.awt.geom.Point2D;
 
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.plugin.filter.Binary;
 import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
 import ij.plugin.filter.PlugInFilter;
+import ij.plugin.frame.RoiManager;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
@@ -33,34 +36,40 @@ public class Leaf_Classification implements PlugInFilter {
     @Override
     public void run(ImageProcessor ip) {
         
+        // convert to grey scale using blue channel
         ColorProcessor cp = (ColorProcessor) ip;
-        cp.setRGBWeights( 0, 0, 1 );
+        cp.setRGBWeights( 0, 0, 1 );    
         ByteProcessor bp = cp.convertToByteProcessor();
+        ImagePlus vorf = new ImagePlus(imp.getShortTitle() + " (grayscale)", bp);
+        vorf.show();
         
         int th = bp.getAutoThreshold();
         IJ.log( "Creating binary image... Threshold: " + th );
-        bp.invert();
+        /*bp.invert();
+        vorf.hide();
+        vorf = new ImagePlus(imp.getShortTitle() + " (inverted)", bp);
+        vorf.show();*/
         
-        ImagePlus vorf = new ImagePlus(imp.getShortTitle() + " (inverted)", bp);
-        vorf.show();
-        
-        bp.threshold( th );
+        bp.threshold( th );     // background = white
         vorf.hide();
         vorf = new ImagePlus(imp.getShortTitle() + " (binarized)", bp);
         vorf.show();
         
-        /*
         IJ.log("Apply morphologic filter: Close");
         bp.dilate();
         bp.erode();
-        bp.dilate();
+        // fill holes
         vorf.hide();
         vorf = new ImagePlus(imp.getShortTitle() + " (filtered)", bp);
-        vorf.show();*/
+        IJ.run(vorf, "Fill Holes", "");
+        vorf.show();   
         
         // Create the region labeler / contour tracer:
         IJ.log( "Searching for leaf region..." );
-        RegionContourLabeling segmenter = new RegionContourLabeling(bp);
+        // invert picture (segmenter needs background to be black)
+        ByteProcessor bpi = (ByteProcessor) bp.duplicate();
+        bpi.invert();
+        RegionContourLabeling segmenter = new RegionContourLabeling(bpi);
         
         // get leaf region (should be the biggest region, so first in list)
         BinaryRegion leaf = segmenter.getRegions( true ).get( 0 );
@@ -68,6 +77,7 @@ public class Leaf_Classification implements PlugInFilter {
         
         // Display the contours
         Rectangle bb = leaf.getBoundingBox();
+        Point2D centerpoint = leaf.getCenterPoint();
         Contour oc = leaf.getOuterContour();
         Overlay layer1 = new Overlay();
         BasicStroke stroke = new BasicStroke(1.0f);
@@ -85,6 +95,12 @@ public class Leaf_Classification implements PlugInFilter {
         bbroi.setStroke(stroke);
         layer1.add(bbroi);
         
+        Roi centerp = new Roi(new Rectangle((int)centerpoint.getX()-1, (int)centerpoint.getY()-1, 3, 3));
+        centerp.setName( "Center" );
+        centerp.setStrokeColor(Color.red);
+        centerp.setStroke(stroke);
+        layer1.add(centerp);
+        
         IJ.log( "Cropping..." );
         vorf.hide();
         bp.setRoi( bb );
@@ -94,6 +110,17 @@ public class Leaf_Classification implements PlugInFilter {
         imp.hide();
         imp.setOverlay(layer1);
         imp.show();
+        
+        RoiManager rm = new RoiManager();
+        rm = RoiManager.getInstance();
+        if (rm.getCount()>0) {
+            //if a ROI window is already open, this is necessary
+            rm.runCommand("Select All");
+            rm.runCommand("Delete");
+        }
+        rm.add( imp, roi, 1 );
+        rm.add( imp, bbroi, 2 );
+        rm.add( imp, centerp, 3 );
     }
     
 
@@ -118,7 +145,7 @@ public class Leaf_Classification implements PlugInFilter {
 		new ImageJ();
 
 		// open the Clown sample
-		ImagePlus image = IJ.openImage("https://images.blogthings.com/theautumnleaftest/leaf-1.jpg");
+		ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/tilia_cordata/Tilia_cordata_5_MEW2014.png");
 		image.show();
 
 		// run the plugin
