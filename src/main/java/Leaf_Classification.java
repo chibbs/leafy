@@ -40,20 +40,23 @@ public class Leaf_Classification implements PlugInFilter {
         int th = bp.getAutoThreshold();
         IJ.log( "Creating binary image... Threshold: " + th );
         bp.invert();
-        ImagePlus vorf = new ImagePlus("Vorverarbeitung (inverted)", bp);
+        
+        ImagePlus vorf = new ImagePlus(imp.getShortTitle() + " (inverted)", bp);
+        vorf.show();
+        
         bp.threshold( th );
-        
-        
-        vorf = new ImagePlus("Vorverarbeitung (binarized)", bp);
+        vorf.hide();
+        vorf = new ImagePlus(imp.getShortTitle() + " (binarized)", bp);
+        vorf.show();
         
         /*
         IJ.log("Apply morphologic filter: Close");
         bp.dilate();
         bp.erode();
-        bp.dilate();*/
-        
-        vorf = new ImagePlus("Vorverarbeitung (closed)", bp);
-        vorf.show();
+        bp.dilate();
+        vorf.hide();
+        vorf = new ImagePlus(imp.getShortTitle() + " (filtered)", bp);
+        vorf.show();*/
         
         // Create the region labeler / contour tracer:
         IJ.log( "Searching for leaf region..." );
@@ -63,16 +66,10 @@ public class Leaf_Classification implements PlugInFilter {
         BinaryRegion leaf = segmenter.getRegions( true ).get( 0 );
         IJ.log( "Leaf: " + leaf.toString() );
         
-        Rectangle bb = leaf.getBoundingBox();
-        
-        bp.setRoi( bb );
-        ImageProcessor ip3 = bp.crop();
-        ImagePlus test3 = new ImagePlus("Test 3", ip3);
-        test3.show();
-        
         // Display the contours
+        Rectangle bb = leaf.getBoundingBox();
         Contour oc = leaf.getOuterContour();
-        Overlay test = new Overlay();
+        Overlay layer1 = new Overlay();
         BasicStroke stroke = new BasicStroke(1.0f);
         
         Shape s = oc.getPolygonPath();
@@ -80,21 +77,23 @@ public class Leaf_Classification implements PlugInFilter {
         roi.setName( "Leaf" );
         roi.setStrokeColor(Color.red);
         roi.setStroke(stroke);
-        test.add(roi);
+        layer1.add(roi);
         
         Roi bbroi = new Roi(bb);
         bbroi.setName( "Bounding Box" );
         bbroi.setStrokeColor(Color.green);
         bbroi.setStroke(stroke);
-        test.add(bbroi);
+        layer1.add(bbroi);
+        
+        IJ.log( "Cropping..." );
+        vorf.hide();
+        bp.setRoi( bb );
+        vorf = new ImagePlus(imp.getShortTitle() + " (processed)", bp.crop());
+        vorf.show();
         
         imp.hide();
-        imp.setOverlay(test);
+        imp.setOverlay(layer1);
         imp.show();
-        
-        bp.setRoi( bbroi );
-        ip = bp.crop();
-        
     }
     
 
