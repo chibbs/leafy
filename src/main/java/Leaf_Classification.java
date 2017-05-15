@@ -10,6 +10,7 @@ import java.util.Comparator;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.plugin.filter.Analyzer;
 import ij.plugin.filter.Binary;
 import ij.plugin.filter.ParticleAnalyzer;
 import ij.gui.ImageCanvas;
@@ -43,7 +44,7 @@ public class Leaf_Classification implements PlugInFilter {
     public int setup( String arg, ImagePlus imp )
     {
         this.imp = imp;
-        return DOES_RGB; // this plugin accepts rgb images
+        return DOES_RGB + DOES_8G; // this plugin accepts rgb images and 8-bit grayscale images
     }
 
     @Override
@@ -52,90 +53,100 @@ public class Leaf_Classification implements PlugInFilter {
         // convert to grey scale using blue channel
         ColorProcessor cp = (ColorProcessor) ip;
         cp.setRGBWeights( 0, 0, 1 );    
-        ByteProcessor bp = cp.convertToByteProcessor();
-        ImagePlus vorf = new ImagePlus(imp.getShortTitle() + " (grayscale)", bp);
-        vorf.show();
+        ByteProcessor bp_gray = cp.convertToByteProcessor();
+        ImagePlus imp_gray = new ImagePlus(imp.getShortTitle() + " (grayscale)", bp_gray);
+        imp_gray.show();
         
-        int th = bp.getAutoThreshold();
+        int th = bp_gray.getAutoThreshold();
         IJ.log( "Creating binary image... Threshold: " + th );
-        /*bp.invert();
-        vorf.hide();
-        vorf = new ImagePlus(imp.getShortTitle() + " (inverted)", bp);
-        vorf.show();*/
+        /*bp_gray.invert();
+        imp_gray.hide();
+        imp_gray = new ImagePlus(imp.getShortTitle() + " (inverted)", bp_gray);
+        imp_gray.show();*/
         
-        bp.threshold( th );     // background = white       -> IsoData algorithm
-        bp.setBackgroundValue( 255 );   // used for rotate and scale
-        //bp.setAutoThreshold(bp.ISODATA, bp.OVER_UNDER_LUT );
-        vorf.hide();
-        vorf = new ImagePlus(imp.getShortTitle() + " (binarized)", bp);
-        vorf.show();
+        ByteProcessor bp_bin = cp.convertToByteProcessor();
+        bp_bin.threshold( th );     // background = white       -> IsoData algorithm
+        bp_bin.setBackgroundValue( 255 );   // used for rotate and scale
+        //bp_bin.setAutoThreshold(bp.ISODATA, bp.OVER_UNDER_LUT );
+        imp_gray.hide();
+        ImagePlus imp_bin = new ImagePlus(imp.getShortTitle() + " (binarized)", bp_bin);
+        imp_bin.show();
         
         IJ.log("Apply morphologic filter: Close");
-        bp.dilate();
-        bp.erode();
+        bp_bin.dilate();
+        bp_bin.erode();
         // fill holes
-        vorf.hide();
-        vorf = new ImagePlus(imp.getShortTitle() + " (filtered)", bp);
-        IJ.run(vorf, "Fill Holes", "");
-        vorf.show();   
+        //imp_bin.hide();
+        //imp_bin = new ImagePlus(imp.getShortTitle() + " (filtered)", bp_gray);
+        imp_bin.updateAndDraw();
+        IJ.run(imp_bin, "Fill Holes", "");
+        //imp_bin.show();   
         
         // Create the region labeler / contour tracer:
         IJ.log( "Searching for leaf region..." );
         // invert picture (segmenter needs background to be black)
-        ByteProcessor bpi = (ByteProcessor) bp.duplicate();
-        bpi.invert();
-        RegionContourLabeling segmenter = new RegionContourLabeling(bpi);
+        ByteProcessor bp_bin_inv = (ByteProcessor) bp_bin.duplicate();
+        bp_bin_inv.invert();
+        RegionContourLabeling segmenter = new RegionContourLabeling(bp_bin_inv); // TODO: cite (see javadoc)
         
         // get leaf region (should be the biggest region, so first in list)
-        BinaryRegion leaf = segmenter.getRegions( true ).get( 0 );
-        IJ.log( "Leaf: " + leaf.toString() );
+        BinaryRegion leaf_region = segmenter.getRegions( true ).get( 0 );
+        IJ.log( "Leaf: " + leaf_region.toString() );
         
         // Display the contours
-        Rectangle bb = leaf.getBoundingBox();
-        Point2D centerpoint = leaf.getCenterPoint();
-        Contour oc = leaf.getOuterContour();
+        Rectangle bb = leaf_region.getBoundingBox();
+        Point2D centerpoint = leaf_region.getCenterPoint();
+        Contour oc = leaf_region.getOuterContour();
         Overlay layer1 = new Overlay();
         BasicStroke stroke = new BasicStroke(1.0f);
         
         Shape s = oc.getPolygonPath();
-        Roi roi = new ShapeRoi(s);
-        roi.setName( "Leaf" );
-        roi.setStrokeColor(Color.red);
-        roi.setStroke(stroke);
-        layer1.add(roi);
+        Roi roi_shp = new ShapeRoi(s);
+        roi_shp.setName( "Leaf" );
+        roi_shp.setStrokeColor(Color.red);
+        roi_shp.setStroke(stroke);
+        layer1.add(roi_shp);
         
-        Roi bbroi = new Roi(bb);
-        bbroi.setName( "Bounding Box" );
-        bbroi.setStrokeColor(Color.green);
-        bbroi.setStroke(stroke);
-        layer1.add(bbroi);
+        Roi roi_bb = new Roi(bb);
+        roi_bb.setName( "Bounding Box" );
+        roi_bb.setStrokeColor(Color.green);
+        roi_bb.setStroke(stroke);
+        layer1.add(roi_bb);
         
-        Roi centerp = new Roi(new Rectangle((int)centerpoint.getX()-1, (int)centerpoint.getY()-1, 3, 3));
-        centerp.setName( "Center" );
-        centerp.setStrokeColor(Color.red);
-        centerp.setStroke(stroke);
-        layer1.add(centerp);
+        Roi roi_cp = new Roi(new Rectangle((int)centerpoint.getX()-1, (int)centerpoint.getY()-1, 3, 3));
+        roi_cp.setName( "Center" );
+        roi_cp.setStrokeColor(Color.red);
+        roi_cp.setStroke(stroke);
+        layer1.add(roi_cp);
         
-        IJ.log( "Cropping..." );
-        vorf.hide();
-        bp.setRoi( bb );
-        //vorf = new ImagePlus(imp.getShortTitle() + " (processed)", bp.crop());
-        vorf.show();
+        //IJ.log( "Cropping..." );
+        bp_bin.setRoi( bb );
+        /*imp_bin.hide();
+        imp_bin = new ImagePlus(imp_bin.getShortTitle(), bp_bin.crop());
+        imp_bin.show();
         
-        imp.hide();
+        ip.setRoi( bb );
+        bp_gray.setRoi( bb );
+        //imp_bin = bp_bin.crop();
+        ip = ip.crop();
+        bp_gray.setRoi( bb );
+        bp_gray.crop();
+        imp_bin.updateAndDraw();
+        imp.updateAndDraw();*/
+        
         imp.setOverlay(layer1);
-        imp.show();
+        imp.updateAndDraw();
         
         RoiManager rm = new RoiManager();
         rm = RoiManager.getInstance();
 
-        rm.add( imp, roi, 1 );
-        rm.add( imp, bbroi, 2 );
-        rm.add( imp, centerp, 3 );
+        rm.add( imp, roi_shp, 1 );
+        rm.add( imp, roi_bb, 2 );
+        rm.add( imp, roi_cp, 3 );
         
         
         // find petiole
-        findPetiole(cp.convertToByteProcessor(), vorf);
+        findPetiole(cp.convertToByteProcessor(), imp_gray);
     }
     
     public void findPetiole(ImageProcessor tip, ImagePlus timp) {
@@ -151,7 +162,7 @@ public class Leaf_Classification implements PlugInFilter {
         
         double minParticleSize = 4000;
         ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.SHOW_NONE
-            //+ParticleAnalyzer.SHOW_RESULTS
+            +ParticleAnalyzer.SHOW_RESULTS
             //+ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES
             ,Measurements.RECT+Measurements.ELLIPSE, rt, minParticleSize, Double.POSITIVE_INFINITY,.15,1);
         pa.analyze(timp,tip);
@@ -165,12 +176,18 @@ public class Leaf_Classification implements PlugInFilter {
         IJ.log("end find Petiole");
         leafCurrent.addPetioleToManager(timp, tip, rm, 0);
         leafCurrent.addBladeToManager(timp, tip, rm, 0);
-            
         
         /*if (sd.saveRois) rm.runCommand("Save", imp.getShortTitle() + sd.getTruncatedDescription() + "_roi.zip");
         results.setHeadings(sd.getFieldNames());
         results.show();
         results.addResults(sd,rm,tip,timp);*/
+        
+        ResultsTable rt_temp = new ResultsTable();
+        Analyzer petioleAnalyzer = new Analyzer(imp,  Measurements.PERIMETER , rt_temp);
+        petioleAnalyzer.measure();
+        rt_temp.getValue("Perim.",rt_temp.getCounter()-1);
+        rt.addValue( "Petiole Length", rt_temp.getValue("Perim.",rt_temp.getCounter()-1) );
+        rt.show( "Results" );
         
         //timp.close();
     }
