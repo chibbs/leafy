@@ -97,29 +97,25 @@ public class Leaf_Classification implements PlugInFilter {
         Rectangle bb = leaf_region.getBoundingBox();
         Point2D centerpoint = leaf_region.getCenterPoint();
         Contour oc = leaf_region.getOuterContour();
-        Overlay layer1 = new Overlay();
-        BasicStroke stroke = new BasicStroke(1.0f);
         
         Shape s = oc.getPolygonPath();
         Roi roi_shp = new ShapeRoi(s);
         roi_shp.setName( "Leaf" );
-        roi_shp.setStrokeColor(Color.red);
-        roi_shp.setStroke(stroke);
-        layer1.add(roi_shp);
         
         Roi roi_bb = new Roi(bb);
         roi_bb.setName( "Bounding Box" );
-        roi_bb.setStrokeColor(Color.green);
-        roi_bb.setStroke(stroke);
-        layer1.add(roi_bb);
-        
+
         Roi roi_cp = new Roi(new Rectangle((int)centerpoint.getX()-1, (int)centerpoint.getY()-1, 3, 3));
         roi_cp.setName( "Center" );
-        roi_cp.setStrokeColor(Color.red);
-        roi_cp.setStroke(stroke);
-        layer1.add(roi_cp);
         
-        //IJ.log( "Cropping..." );
+        RoiManager rm = new RoiManager();
+        rm = RoiManager.getInstance();
+
+        rm.add( imp, roi_shp, 1 );
+        rm.add( imp, roi_bb, 2 );
+        rm.add( imp, roi_cp, 3 );  
+        
+      //IJ.log( "Cropping..." );
         bp_bin.setRoi( bb );
         /*imp_bin.hide();
         imp_bin = new ImagePlus(imp_bin.getShortTitle(), bp_bin.crop());
@@ -133,17 +129,6 @@ public class Leaf_Classification implements PlugInFilter {
         bp_gray.crop();
         imp_bin.updateAndDraw();
         imp.updateAndDraw();*/
-        
-        imp.setOverlay(layer1);
-        imp.updateAndDraw();
-        
-        RoiManager rm = new RoiManager();
-        rm = RoiManager.getInstance();
-
-        rm.add( imp, roi_shp, 1 );
-        rm.add( imp, roi_bb, 2 );
-        rm.add( imp, roi_cp, 3 );
-        
         
         // find petiole
         findPetiole(cp.convertToByteProcessor(), imp_gray);
@@ -174,8 +159,8 @@ public class Leaf_Classification implements PlugInFilter {
         
         //timp.updateAndDraw();
         IJ.log("end find Petiole");
-        leafCurrent.addPetioleToManager(timp, tip, rm, 0);
-        leafCurrent.addBladeToManager(timp, tip, rm, 0);
+        leafCurrent.addPetioleToManager(timp, tip, rm, 4);
+        leafCurrent.addBladeToManager(timp, tip, rm, 5);
         
         /*if (sd.saveRois) rm.runCommand("Save", imp.getShortTitle() + sd.getTruncatedDescription() + "_roi.zip");
         results.setHeadings(sd.getFieldNames());
@@ -187,6 +172,7 @@ public class Leaf_Classification implements PlugInFilter {
         petioleAnalyzer.measure();
         rt_temp.getValue("Perim.",rt_temp.getCounter()-1);
         rt.addValue( "Petiole Length", rt_temp.getValue("Perim.",rt_temp.getCounter()-1) );
+        
         rt.show( "Results" );
         
         //timp.close();
