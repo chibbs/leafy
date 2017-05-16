@@ -48,12 +48,13 @@ public class Leaf_Classification implements PlugInFilter {
 
     static boolean showContours = false;
     ImagePlus imp;
-    static String cls = "";
+    String cls = "";
     
     @Override
     public int setup( String arg, ImagePlus imp )
     {
         this.imp = imp;
+        if (arg.length() > 0) cls = arg;
         return DOES_RGB + DOES_8G; // this plugin accepts rgb images and 8-bit grayscale images
     }
 
@@ -296,7 +297,7 @@ public class Leaf_Classification implements PlugInFilter {
                 if (img==null) continue;
                 
                 //cls = (new File(dir1+list[i])).getParentFile().getName();
-                cls = list[i].split( "_" )[0] + " " + list[i].split( "_" )[1];
+                //cls = list[i].split( "_" )[0] + " " + list[i].split( "_" )[1];
                 
                 //img = convertToGrayscale(img);
                 WindowManager.setTempCurrentImage(img);     // needed because image is not shown (no images open)
@@ -315,20 +316,11 @@ public class Leaf_Classification implements PlugInFilter {
         
         ResultsTable rt = ResultsTable.getResultsTable();
         rt.save( dir1 + "weka.csv" );
-        
-        close_windows();
+
         IJ.run("Quit");
     }
 	
-	public static void close_windows() {
-	    //http://imagej.1557.x6.nabble.com/Re-Plugin-Command-To-Close-Window-Without-quot-Save-Changes-quot-Dialog-td3683293.html
-	         ImagePlus img;
-	         while (null != WindowManager.getCurrentImage()) {
-	             img = WindowManager.getCurrentImage();
-	             img.changes = false;
-	             img.close();
-	         }
-	}
+	
     
     static ImagePlus convertToGrayscale(ImagePlus img) {
         ImagePlus img2 = img.createImagePlus();
