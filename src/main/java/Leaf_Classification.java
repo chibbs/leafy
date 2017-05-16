@@ -112,6 +112,7 @@ public class Leaf_Classification implements PlugInFilter {
         Shape s = oc.getPolygonPath();
         Roi roi_shp = new ShapeRoi(s);
         roi_shp.setName( "Leaf" );
+        IJ.run("Measure");
         
         Roi roi_bb = new Roi(bb);
         roi_bb.setName( "Bounding Box" );
@@ -220,10 +221,11 @@ public class Leaf_Classification implements PlugInFilter {
             +ParticleAnalyzer.SHOW_RESULTS
             //+ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES
             ,Measurements.RECT+Measurements.ELLIPSE, rt, minParticleSize, Double.POSITIVE_INFINITY,0,1);
-        pa.analyze(timp,tip);
+        pa.analyze(timp,tip);   // TODO: nur Blatt messen, nicht alle Objekte im Bild
+        
         
         leaf leafCurrent = new leaf();
-        leafCurrent.setLeaf( rt, 0, cal ); //set initial attributes
+        leafCurrent.setLeaf( rt, 0, cal ); //set initial attributes // TODO: nur aktuelle Ergebnisse hinzufügen
         leafCurrent.scanLeaf(tip);          //do a scan across the length to determine widths
         leafCurrent.findPetiole(tip);           //
         
@@ -272,52 +274,17 @@ public class Leaf_Classification implements PlugInFilter {
 		// start ImageJ
 		new ImageJ();
 
-		/*
+		
         // open sample
         //ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/populus_tremula/Populus_tremula_20_MEW2014.png");
         ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/acer_platanoides/Acer_platanoides_3_MEW2014.png");
         image.show();
 
         // run the plugin
-        IJ.runPlugIn(clazz.getName(), "");*/
-        
-        // process folder
-        String dir1 = IJ.getDirectory("Select source folder...");
-        if (dir1==null) return;
-        //System.out.println( dir1 );
-        String[] list = new File(dir1).list();
-        if (list==null) return;
-        for (int i=0; i<list.length; i++) {
-            IJ.showProgress(i, list.length);
-            IJ.log((i+1)+": "+list[i]+"  "+WindowManager.getImageCount());
-            IJ.showStatus(i+"/"+list.length);
-            boolean isDir = (new File(dir1+list[i])).isDirectory();
-            if (!isDir && !list[i].startsWith(".")) {
-                ImagePlus img = IJ.openImage(dir1+list[i]);
-                if (img==null) continue;
-                
-                //cls = (new File(dir1+list[i])).getParentFile().getName();
-                //cls = list[i].split( "_" )[0] + " " + list[i].split( "_" )[1];
-                
-                //img = convertToGrayscale(img);
-                WindowManager.setTempCurrentImage(img);     // needed because image is not shown (no images open)
-                //img.show();
-                // run the plugin
-                IJ.runPlugIn(clazz.getName(), "");
-                //img.hide();
-                //IJ.saveAs(format, dir2+list[i]);
-                
-            }
-        }
-        IJ.showProgress(1.0);
-        IJ.showStatus("");
+        IJ.runPlugIn(clazz.getName(), "");
         
         
-        
-        ResultsTable rt = ResultsTable.getResultsTable();
-        rt.save( dir1 + "weka.csv" );
-
-        IJ.run("Quit");
+ 
     }
 	
 	
