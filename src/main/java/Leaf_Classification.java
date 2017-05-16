@@ -1,11 +1,15 @@
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -15,6 +19,8 @@ import ij.plugin.filter.Binary;
 import ij.plugin.filter.ParticleAnalyzer;
 import ij.gui.ImageCanvas;
 import ij.gui.Overlay;
+import ij.gui.Plot;
+import ij.gui.PlotWindow;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
 import ij.gui.WaitForUserDialog;
@@ -132,6 +138,65 @@ public class Leaf_Classification implements PlugInFilter {
         
         // find petiole
         findPetiole(cp.convertToByteProcessor(), imp_gray);
+        
+        // calculate ccd
+        Iterator<Point> it = oc.iterator();
+        double dist;
+        ArrayList<Double> ccd = new ArrayList<Double>();
+        int i = 0;
+        int anz = oc.getPointArray().length;
+        double[] x = new double[anz];
+        double[] y = new double[anz];
+        double maxdist = 0;
+        Point maxpoint = null;
+        while (it.hasNext()) {
+            Point a = it.next();
+            dist = Math.sqrt( Math.pow(a.getX() - centerpoint.getX(), 2) + Math.pow( a.getY() - centerpoint.getY(), 2 ) );
+            //dist = Math.round( dist );
+            ccd.add( dist );
+            System.out.println( dist );
+            x[i] = i;
+            y[i] = dist;
+            //maxdist = (dist > maxdist) ? dist : maxdist;
+            if (dist > maxdist) {
+                maxdist = dist;
+                maxpoint = a;
+            }
+            i++;
+        }
+        
+        if (maxpoint != null) {
+            Roi roi_mp = new Roi(new Rectangle((int)maxpoint.getX()-1, (int)maxpoint.getY()-1, 3, 3));
+            roi_mp.setName( "Maxpoint" );
+            rm.add( imp, roi_mp, 6 );
+        }
+        
+        // NMS
+        /*for (i = 0; i < y.length; i++) {
+            dist = y[i];
+            for (a = -10; a < 10; a++) {
+                
+            }
+        }*/
+        
+        PlotWindow.noGridLines = false; // draw grid lines
+        Plot plot = new Plot(imp.getShortTitle() + " Contour Distances","Contour Point","Distance",x,y);
+        plot.setLimits(0,anz, 0, maxdist);
+        plot.setLineWidth(2);
+        
+     // add label
+        plot.setColor(Color.black);
+        plot.changeFont(new Font("Helvetica", Font.PLAIN, 24));
+        plot.addLabel(0.15, 0.95, "This is a label");
+
+        plot.changeFont(new Font("Helvetica", Font.PLAIN, 16));
+        plot.setColor(Color.blue);
+        plot.show();
+        
+     // process folder
+        /*String dir1 = IJ.getDirectory("Select source folder...");
+        if (dir1==null) return;
+        System.out.println( dir1 );*/
     }
     
     public void findPetiole(ImageProcessor tip, ImagePlus timp) {
@@ -149,7 +214,7 @@ public class Leaf_Classification implements PlugInFilter {
         ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.SHOW_NONE
             +ParticleAnalyzer.SHOW_RESULTS
             //+ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES
-            ,Measurements.RECT+Measurements.ELLIPSE, rt, minParticleSize, Double.POSITIVE_INFINITY,.15,1);
+            ,Measurements.RECT+Measurements.ELLIPSE, rt, minParticleSize, Double.POSITIVE_INFINITY,0,1);
         pa.analyze(timp,tip);
         
         leaf leafCurrent = new leaf();
@@ -176,6 +241,8 @@ public class Leaf_Classification implements PlugInFilter {
         rt.show( "Results" );
         
         //timp.close();
+        
+        
     }
     
 
@@ -200,7 +267,8 @@ public class Leaf_Classification implements PlugInFilter {
 		new ImageJ();
 
 		// open the Clown sample
-		ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/populus_tremula/Populus_tremula_20_MEW2014.png");
+		//ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/populus_tremula/Populus_tremula_20_MEW2014.png");
+		ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/acer_platanoides/Acer_platanoides_3_MEW2014.png");
 		image.show();
 
 		// run the plugin
