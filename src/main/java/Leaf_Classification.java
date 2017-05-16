@@ -6,6 +6,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Point2D;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -14,6 +15,7 @@ import java.util.Iterator;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.WindowManager;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.filter.Binary;
 import ij.plugin.filter.ParticleAnalyzer;
@@ -32,6 +34,7 @@ import ij.plugin.frame.RoiManager;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
+import ij.process.MedianCut;
 import imagingbook.pub.regions.Contour;
 import imagingbook.pub.regions.RegionContourLabeling;
 import imagingbook.pub.regions.RegionLabeling.BinaryRegion;
@@ -45,6 +48,7 @@ public class Leaf_Classification implements PlugInFilter {
 
     static boolean showContours = false;
     ImagePlus imp;
+    static String cls = "";
     
     @Override
     public int setup( String arg, ImagePlus imp )
@@ -191,12 +195,11 @@ public class Leaf_Classification implements PlugInFilter {
 
         plot.changeFont(new Font("Helvetica", Font.PLAIN, 16));
         plot.setColor(Color.blue);
-        plot.show();
+        //plot.show();
         
-     // process folder
-        /*String dir1 = IJ.getDirectory("Select source folder...");
-        if (dir1==null) return;
-        System.out.println( dir1 );*/
+        imp.hide();
+        //rm.setVisible(false);
+        imp_bin.hide();
     }
     
     public void findPetiole(ImageProcessor tip, ImagePlus timp) {
@@ -207,7 +210,8 @@ public class Leaf_Classification implements PlugInFilter {
         tip.setAutoThreshold("Moments", false, ImageProcessor.OVER_UNDER_LUT );
 
         Calibration cal = timp.getCalibration();
-        ResultsTable rt = new ResultsTable();
+        //ResultsTable rt = new ResultsTable();
+        ResultsTable rt = ResultsTable.getResultsTable();
         RoiManager rm = RoiManager.getInstance();
         
         double minParticleSize = 4000;
@@ -237,6 +241,7 @@ public class Leaf_Classification implements PlugInFilter {
         petioleAnalyzer.measure();
         rt_temp.getValue("Perim.",rt_temp.getCounter()-1);
         rt.addValue( "Petiole Length", rt_temp.getValue("Perim.",rt_temp.getCounter()-1) );
+        rt.addValue( "Class", cls );
         
         rt.show( "Results" );
         
@@ -266,12 +271,55 @@ public class Leaf_Classification implements PlugInFilter {
 		// start ImageJ
 		new ImageJ();
 
-		// open the Clown sample
-		//ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/populus_tremula/Populus_tremula_20_MEW2014.png");
-		ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/acer_platanoides/Acer_platanoides_3_MEW2014.png");
-		image.show();
+		/*
+        // open sample
+        //ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/populus_tremula/Populus_tremula_20_MEW2014.png");
+        ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/acer_platanoides/Acer_platanoides_3_MEW2014.png");
+        image.show();
 
-		// run the plugin
-		IJ.runPlugIn(clazz.getName(), "");
+        // run the plugin
+        IJ.runPlugIn(clazz.getName(), "");*/
+        
+        // process folder
+        String dir1 = IJ.getDirectory("Select source folder...");
+        if (dir1==null) return;
+        //System.out.println( dir1 );
+        String[] list = new File(dir1).list();
+        if (list==null) return;
+        for (int i=0; i<list.length; i++) {
+            IJ.showProgress(i, list.length);
+            IJ.log((i+1)+": "+list[i]+"  "+WindowManager.getImageCount());
+            IJ.showStatus(i+"/"+list.length);
+            boolean isDir = (new File(dir1+list[i])).isDirectory();
+            if (!isDir && !list[i].startsWith(".")) {
+                ImagePlus img = IJ.openImage(dir1+list[i]);
+                if (img==null) continue;
+                
+                cls = (new File(dir1+list[i])).getParentFile().getName();
+                
+                //img = convertToGrayscale(img);
+                WindowManager.setTempCurrentImage(img);     // needed because image is not shown (no images open)
+                //img.show();
+                // run the plugin
+                IJ.runPlugIn(clazz.getName(), "");
+                //img.hide();
+                //IJ.saveAs(format, dir2+list[i]);
+                
+            }
+        }
+        IJ.showProgress(1.0);
+        IJ.showStatus("");
+        
+        
+        
+        ResultsTable rt = ResultsTable.getResultsTable();
+        rt.save( dir1 + "results.csv" );
+    }
+    
+    static ImagePlus convertToGrayscale(ImagePlus img) {
+        ImagePlus img2 = img.createImagePlus();
+        img2.setProcessor(img.getTitle(), img.getProcessor().convertToByte(true));
+        return img2;
+    
 	}
 }
