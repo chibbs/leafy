@@ -2,6 +2,7 @@ import java.awt.Point;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.measure.Measurements;
 import ij.measure.ResultsTable;
@@ -44,6 +45,15 @@ public class LeafPreprocessor {
         imp_bin.updateAndDraw();
         IJ.run(imp_bin, "Fill Holes", "");
         
+        IJ.setBackgroundColor( 255, 255, 255 );
+        
+        // clear pixels outside leaf
+        Roi roi_leaf = getLeafRoi(imp_bin);
+        bp_bin.fillOutside( roi_leaf );
+        imp_bin.updateAndDraw();
+    }
+    
+    public static PolygonRoi getLeafRoi(ImagePlus imp_bin){
         ResultsTable rt_temp = new ResultsTable();
         // https://imagej.nih.gov/ij/developer/source/ij/plugin/filter/ParticleAnalyzer.java.html
         ParticleAnalyzer pat = new ParticleAnalyzer(
@@ -71,15 +81,10 @@ public class LeafPreprocessor {
               }
             }
         }
-        Point stp = new Point((int)rt_temp.getValueAsDouble(rt_temp.getColumnIndex("XStart"), maxrow), (int)rt_temp.getValueAsDouble(rt_temp.getColumnIndex("YStart"), maxrow));
+        Point stp = new Point((int)rt_temp.getValueAsDouble(rt_temp.getColumnIndex("XStart"), maxrow), 
+                              (int)rt_temp.getValueAsDouble(rt_temp.getColumnIndex("YStart"), maxrow));
         IJ.doWand(stp.x, stp.y);
-        IJ.setBackgroundColor( 255, 255, 255 );
-        //IJ.run("Clear Outside");
-        
-        // clear pixels outside leaf
-        Roi roi_leaf = imp_bin.getRoi();
-        bp_bin.fillOutside( roi_leaf );
-        imp_bin.updateAndDraw();
+        return (PolygonRoi) imp_bin.getRoi();
     }
     
     public static ImagePlus cropImage(ImagePlus imp){
