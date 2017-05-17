@@ -7,7 +7,6 @@ import java.util.ArrayList;
 
 import ij.IJ;
 import ij.ImagePlus;
-import ij.WindowManager;
 import ij.gui.Line;
 import ij.gui.OvalRoi;
 import ij.gui.Plot;
@@ -78,7 +77,7 @@ public class LeafAnalyzer {
             // TODO
         }
 
-        double area, circ, elong, round, solid, majoraxis, minoraxis, skew, kurt, elliptic, ellipsarea = 0;
+        double area, circ, round, solid, majoraxis, minoraxis, skew, kurt, elliptic, ellipsarea = 0;
 
         for (int row=0; row<counter; row++) {
             circ = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Circ."), row);
@@ -88,9 +87,7 @@ public class LeafAnalyzer {
             kurt = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Kurt"), row);
 
             majoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Feret"), row);
-            minoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("MinFeret"), row);
-            elong = 1.0 - Math.sqrt( minoraxis ) / Math.sqrt( majoraxis );
-            
+            minoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("MinFeret"), row);           
             area = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Area"), row);
             ellipsarea = Math.PI * majoraxis * minoraxis / 4;   // durch 4 teilen, weil nur die Hälfte der Achsen benötigt wird (Radius statt Durchmesser)
             elliptic = area / ellipsarea;
@@ -202,96 +199,5 @@ public class LeafAnalyzer {
         rt.show( "Results" );
 
         //timp.close();
-
-
     }
-
-    public void measureROI (Roi r, Calibration cal) {
-
-        int nBorder;
-        double wp,hp;
-        double[] x,y;
-        wp = cal.pixelWidth;
-        hp = cal.pixelHeight;
-        Analyzer aSys = new Analyzer(); //System Analyzer
-        ResultsTable rt = Analyzer.getResultsTable();
-
-        double feret = 0;
-        double ortho = 0;
-        if(r == null)return;
-        if((r instanceof Line)||(r instanceof TextRoi)){
-            IJ.showMessage("Measure Roi cannot process that type or ROI");
-            return;
-        }
-        if(r instanceof PolygonRoi){
-            PolygonRoi pr = (PolygonRoi)r;
-            nBorder = pr.getNCoordinates();
-            int[] intCoords = pr.getXCoordinates();
-            x = new double[nBorder];
-            if (wp != 1.0){
-                for (int kp = 0; kp < nBorder; kp++)
-                    x[kp] = wp*intCoords[kp];
-            }
-            intCoords = pr.getYCoordinates();
-            y = new double[nBorder];
-            if (hp != 1.0) {
-                for (int kp = 0; kp < nBorder; kp++)
-                    y[kp] = hp*intCoords[kp];
-            }
-            //find the length, or Feret's diameter
-            double cos = 1;
-            double sin = 0;
-            for (int k1 = 0; k1 < nBorder; k1++){
-                for (int k2 = k1; k2 < nBorder; k2++){
-                    double dx = x[k2] - x[k1];
-                    double dy = y[k2] - y[k1];
-                    double d = Math.sqrt(dx*dx + dy*dy);
-                    if(d > feret){
-                        feret = d;
-                        cos = dx/d;
-                        sin = dy/d;
-                    }
-                }
-            }
-
-            //find the orthogonal distance
-            double pMin = sin*x[0] - cos*y[0];
-            double pMax = pMin;
-            for (int k = 1; k < nBorder; k++){
-                double p = sin*x[k] - cos*y[k];
-                if (p < pMin) pMin = p;
-                if (p > pMax) pMax = p;
-            }
-            ortho = pMax - pMin;
-        } else if (r instanceof OvalRoi){
-            Rectangle rect = r.getBounds();
-            double wr = wp*rect.getWidth();
-            double hr = hp*rect.getHeight();
-            if(wr > hr){
-                feret = wr;
-                ortho = hr;
-            }else{
-                feret = hr;
-                ortho = wr;
-            }
-
-        } else {
-            //Roi must be a rectangle
-            Rectangle rect = r.getBounds();
-            double wr = wp*rect.getWidth();
-            double hr = hp*rect.getHeight();
-            feret = Math.sqrt(wr*wr + hr*hr);
-            if (feret == 0){
-                ortho = 0;
-            }else{
-                ortho = 2*wr*hr/feret;
-            }
-        }
-        rt.incrementCounter();
-        rt.addValue("Roi_Length",feret);
-        rt.addValue("Roi_Width",ortho);
-        aSys.displayResults();
-        aSys.updateHeadings();
-    }
-
 }
