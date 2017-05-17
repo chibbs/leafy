@@ -1,51 +1,26 @@
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
-import java.awt.Shape;
-import java.awt.geom.Point2D;
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
-import ij.WindowManager;
 import ij.plugin.filter.Analyzer;
-import ij.plugin.filter.Binary;
 import ij.plugin.filter.ParticleAnalyzer;
-import ij.gui.ImageCanvas;
-import ij.gui.Overlay;
 import ij.gui.Plot;
 import ij.gui.PlotWindow;
 import ij.gui.Roi;
-import ij.gui.ShapeRoi;
-import ij.gui.WaitForUserDialog;
 import ij.measure.Calibration;
 import ij.measure.Measurements;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
 import ij.plugin.frame.RoiManager;
 import ij.process.ByteProcessor;
-import ij.process.ColorProcessor;
-import ij.process.FloatPolygon;
 import ij.process.ImageProcessor;
-import ij.process.MedianCut;
-import imagingbook.pub.regions.Contour;
-import imagingbook.pub.regions.RegionContourLabeling;
-import imagingbook.pub.regions.RegionLabeling.BinaryRegion;
-import jnmaloof.leafj.LeafJ_;
-import jnmaloof.leafj.LeafResults;
-import jnmaloof.leafj.Sort2D;
 import jnmaloof.leafj.leaf;
-import jnmaloof.leafj.sampleDescription;
 
 public class Leaf_Classification implements PlugInFilter {
 
