@@ -52,9 +52,10 @@ public class Leaf_Classification implements PlugInFilter {
         roi_leaf.setName( "Leaf" );
         rm.add( imp, roi_leaf, 0);
         
-        LeafAnalyzer la = new LeafAnalyzer(roi_leaf);
-        la.analyze( imp_gray );  // TODO: imageplus entfernen und nur mit roi messen
-         
+        LeafAnalyzer la = new LeafAnalyzer(roi_leaf); 
+        la.analyze(imp_bin); 
+        la.findPetiole( imp_gray ); // TODO: imageplus entfernen und nur mit roi messen
+        //la.measureROI( roi_leaf, imp.getCalibration());
         
         //imp.hide();
         //rm.setVisible(false);
