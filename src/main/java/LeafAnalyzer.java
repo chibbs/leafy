@@ -42,6 +42,7 @@ public class LeafAnalyzer {
         RoiManager rm = RoiManager.getInstance();
         if (rm == null) 
             rm = new RoiManager();
+        IJ.run("Interpolate", "interval=3 smooth");     // needed for moments calculation
 
         ResultsTable rt_temp = new ResultsTable();
         ResultsTable rt = ResultsTable.getResultsTable();
@@ -77,24 +78,35 @@ public class LeafAnalyzer {
             // TODO
         }
 
-        double circ, elong, round, solid, majoraxis, minoraxis = 0;
+        double area, circ, elong, round, solid, majoraxis, minoraxis, skew, kurt, elliptic, ellipsarea = 0;
 
         for (int row=0; row<counter; row++) {
             circ = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Circ."), row);
             round = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Round"), row);
             solid = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Solidity"), row);
+            skew = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Skew"), row);
+            kurt = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Kurt"), row);
 
-            majoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Major"), row);
-            minoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Minor"), row);
+            majoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Feret"), row);
+            minoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("MinFeret"), row);
             elong = 1.0 - Math.sqrt( minoraxis ) / Math.sqrt( majoraxis );
+            
+            area = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Area"), row);
+            ellipsarea = Math.PI * majoraxis * minoraxis / 4;   // durch 4 teilen, weil nur die Hälfte der Achsen benötigt wird (Radius statt Durchmesser)
+            elliptic = area / ellipsarea;
+            
+            // TODO:  Rauhigkeit = Umfang / Umfang der konv. Hülle
 
             rt.incrementCounter();
             rt.addValue( "Label", rt_temp.getLabel( row ) );
             if (this.groundTruth != "") rt.addValue( "Class", this.groundTruth );
-            rt.addValue( "Elongation", elong );
+            //rt.addValue( "Elongation", elong );
             rt.addValue( "Circularity", circ );
             rt.addValue( "Solidity", solid );
             rt.addValue( "Roundness", round );
+            rt.addValue( "Skewness", skew );
+            rt.addValue( "Kurtosis", kurt );
+            rt.addValue( "Elliptic", elliptic );
 
             // TODO: add moments
         }

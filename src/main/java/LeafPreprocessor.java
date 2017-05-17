@@ -28,8 +28,9 @@ public class LeafPreprocessor {
         int th = bp_gray.getAutoThreshold();
         IJ.log( "Creating binary image... Threshold: " + th );
         ByteProcessor bp_bin = (ByteProcessor) bp_gray.duplicate();
-        bp_bin.threshold( th );     // background = white       -> IsoData algorithm
-        bp_bin.setBackgroundValue( 255 );   // used for rotate and scale
+        bp_bin.threshold( th );     // background = white (needed for erode/dilate)      -> IsoData algorithm
+      
+        //bp_bin.setBackgroundValue( 255 );   // used for rotate and scale
         //bp_bin.setAutoThreshold(bp.ISODATA, bp.OVER_UNDER_LUT );
         
         //ImagePlus imp_bin = new ImagePlus(imp.getShortTitle() + " (binarized)", bp_bin);
