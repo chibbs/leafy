@@ -52,7 +52,7 @@ public class Leaf_Classification implements PlugInFilter {
         roi_leaf.setName( "Leaf" );
         rm.add( imp, roi_leaf, 0);
         
-        LeafAnalyzer la = new LeafAnalyzer(roi_leaf); 
+        LeafAnalyzer la = new LeafAnalyzer(roi_leaf, cls); 
         la.analyze(imp_bin); 
         //la.calcCCD();
         la.findPetiole( imp_gray ); // TODO: imageplus entfernen und nur mit roi messen

@@ -67,12 +67,9 @@ public class Batch_Analyzer {
         IJ.showProgress(1.0);
         IJ.showStatus("");
         
-        
-        
+        close_windows();
         ResultsTable rt = ResultsTable.getResultsTable();
         rt.save( dir1 + "weka.csv" );
-        
-        close_windows();
         IJ.run("Quit");
         System.exit( 0 );
     }

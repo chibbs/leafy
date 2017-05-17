@@ -27,11 +27,13 @@ import jnmaloof.leafj.leaf;
 public class LeafAnalyzer {
     private Polygon contour;
     private Roi roi_leaf;
+    private String groundTruth;
 
-    public LeafAnalyzer( Roi roi_leaf )
+    public LeafAnalyzer( Roi roi_leaf, String cls )
     {
         this.roi_leaf = roi_leaf;
         this.contour = roi_leaf.getPolygon();
+        this.groundTruth = cls;
     }
 
     public void analyze(ImagePlus imp) {
@@ -88,6 +90,7 @@ public class LeafAnalyzer {
 
             rt.incrementCounter();
             rt.addValue( "Label", rt_temp.getLabel( row ) );
+            if (this.groundTruth != "") rt.addValue( "Class", this.groundTruth );
             rt.addValue( "Elongation", elong );
             rt.addValue( "Circularity", circ );
             rt.addValue( "Solidity", solid );
