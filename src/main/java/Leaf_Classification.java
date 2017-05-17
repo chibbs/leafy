@@ -3,6 +3,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Point;
+import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Point2D;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -33,6 +35,7 @@ import ij.plugin.filter.PlugInFilter;
 import ij.plugin.frame.RoiManager;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
+import ij.process.FloatPolygon;
 import ij.process.ImageProcessor;
 import ij.process.MedianCut;
 import imagingbook.pub.regions.Contour;
@@ -61,7 +64,9 @@ public class Leaf_Classification implements PlugInFilter {
     @Override
     public void run(ImageProcessor ip) {
         
-        // convert to grey scale using blue channel
+        
+        
+        // convert to gray scale using blue channel
         ColorProcessor cp = (ColorProcessor) ip;
         cp.setRGBWeights( 0, 0, 1 );    
         ByteProcessor bp_gray = cp.convertToByteProcessor();
@@ -70,11 +75,6 @@ public class Leaf_Classification implements PlugInFilter {
         
         int th = bp_gray.getAutoThreshold();
         IJ.log( "Creating binary image... Threshold: " + th );
-        /*bp_gray.invert();
-        imp_gray.hide();
-        imp_gray = new ImagePlus(imp.getShortTitle() + " (inverted)", bp_gray);
-        imp_gray.show();*/
-        
         ByteProcessor bp_bin = cp.convertToByteProcessor();
         bp_bin.threshold( th );     // background = white       -> IsoData algorithm
         bp_bin.setBackgroundValue( 255 );   // used for rotate and scale
@@ -87,88 +87,95 @@ public class Leaf_Classification implements PlugInFilter {
         bp_bin.dilate();
         bp_bin.erode();
         // fill holes
-        //imp_bin.hide();
-        //imp_bin = new ImagePlus(imp.getShortTitle() + " (filtered)", bp_gray);
         imp_bin.updateAndDraw();
-        IJ.run(imp_bin, "Fill Holes", "");
-        //imp_bin.show();   
+        //IJ.run(imp_bin, "Fill Holes", "");
         
-        // Create the region labeler / contour tracer:
-        IJ.log( "Searching for leaf region..." );
-        // invert picture (segmenter needs background to be black)
-        ByteProcessor bp_bin_inv = (ByteProcessor) bp_bin.duplicate();
-        bp_bin_inv.invert();
-        RegionContourLabeling segmenter = new RegionContourLabeling(bp_bin_inv); // TODO: cite (see javadoc)
+        ResultsTable rt_temp = new ResultsTable();
+        // https://imagej.nih.gov/ij/developer/source/ij/plugin/filter/ParticleAnalyzer.java.html
+        ParticleAnalyzer pat = new ParticleAnalyzer(
+                                 //ParticleAnalyzer.ADD_TO_MANAGER+
+                                 //ParticleAnalyzer.SHOW_OVERLAY_OUTLINES+
+                                 ParticleAnalyzer.INCLUDE_HOLES+
+                                 ParticleAnalyzer.RECORD_STARTS, 
+                                 Measurements.AREA, rt_temp, 10, Double.POSITIVE_INFINITY, 0, 1);
+        pat.analyze( imp_bin );
         
-        // get leaf region (should be the biggest region, so first in list)
-        BinaryRegion leaf_region = segmenter.getRegions( true ).get( 0 );
-        IJ.log( "Leaf: " + leaf_region.toString() );
+        int counter = rt_temp.getCounter();  //number of results
+        if (counter==0) {
+          //TODO:no results, handle that error here
+        }
+        int maxrow = 0;
+        if (counter > 1) {
+            int col = rt_temp.getColumnIndex("Area");
+            double area, maxarea = 0;
+            
+            for (int row=0; row<counter; row++) {
+              area = rt_temp.getValueAsDouble(col, row); //all the Area values
+              if (area > maxarea) {
+                  maxarea = area;
+                  maxrow = row;
+              }
+            }
+        }
+        Point stp = new Point((int)rt_temp.getValueAsDouble(rt_temp.getColumnIndex("XStart"), maxrow), (int)rt_temp.getValueAsDouble(rt_temp.getColumnIndex("YStart"), maxrow));
+        IJ.doWand(stp.x, stp.y);
         
-        // Display the contours
-        Rectangle bb = leaf_region.getBoundingBox();
-        Point2D centerpoint = leaf_region.getCenterPoint();
-        Contour oc = leaf_region.getOuterContour();
+        RoiManager rm = RoiManager.getInstance();
+        if (rm == null) 
+            rm = new RoiManager();
+        Roi roi_leaf = imp_bin.getRoi();
+        roi_leaf.setName( "Leaf" );
+        rm.add( imp, roi_leaf, 0);
+        //rm.add( imp, imp_bin.getRoi(), 0 );
         
-        Shape s = oc.getPolygonPath();
-        Roi roi_shp = new ShapeRoi(s);
-        roi_shp.setName( "Leaf" );
         IJ.run("Measure");
         
-        Roi roi_bb = new Roi(bb);
-        roi_bb.setName( "Bounding Box" );
+        /*
+        //draw
+        double[] points = roi_leaf.getContourCentroid();
+        Polygon t = roi_leaf.getPolygon();
+        FloatPolygon t3 = roi_leaf.getInterpolatedPolygon();
+        
+        PlotWindow.noGridLines = false; // draw grid lines
+        Plot plot = new Plot("Test","x","y",t3.ypoints,t3.xpoints);
+        //Plot p = new Plot()
+        plot.setLimits(0,2000, 0, 2000);
+        plot.setLineWidth(2);
 
-        Roi roi_cp = new Roi(new Rectangle((int)centerpoint.getX()-1, (int)centerpoint.getY()-1, 3, 3));
-        roi_cp.setName( "Center" );
-        
-        RoiManager rm = new RoiManager();
-        rm = RoiManager.getInstance();
+        plot.setColor(Color.black);
+        plot.changeFont(new Font("Helvetica", Font.PLAIN, 24));
+        plot.addLabel(0.15, 0.95, "This is a label");
 
-        rm.add( imp, roi_shp, 1 );
-        rm.add( imp, roi_bb, 2 );
-        rm.add( imp, roi_cp, 3 );  
-        
-      //IJ.log( "Cropping..." );
-        bp_bin.setRoi( bb );
-        /*imp_bin.hide();
-        imp_bin = new ImagePlus(imp_bin.getShortTitle(), bp_bin.crop());
-        imp_bin.show();
-        
-        ip.setRoi( bb );
-        bp_gray.setRoi( bb );
-        //imp_bin = bp_bin.crop();
-        ip = ip.crop();
-        bp_gray.setRoi( bb );
-        bp_gray.crop();
-        imp_bin.updateAndDraw();
-        imp.updateAndDraw();*/
+        plot.changeFont(new Font("Helvetica", Font.PLAIN, 16));
+        plot.setColor(Color.blue);
+        plot.show();
+        */
         
         // find petiole
         findPetiole(cp.convertToByteProcessor(), imp_gray);
         
         // calculate ccd
-        Iterator<Point> it = oc.iterator();
         double dist;
         ArrayList<Double> ccd = new ArrayList<Double>();
-        int i = 0;
-        int anz = oc.getPointArray().length;
-        double[] x = new double[anz];
-        double[] y = new double[anz];
+        Polygon t3 = roi_leaf.getPolygon( );
+        double[] x = new double[t3.npoints];
+        double[] y = new double[t3.npoints];
         double maxdist = 0;
         Point maxpoint = null;
-        while (it.hasNext()) {
-            Point a = it.next();
-            dist = Math.sqrt( Math.pow(a.getX() - centerpoint.getX(), 2) + Math.pow( a.getY() - centerpoint.getY(), 2 ) );
-            //dist = Math.round( dist );
-            ccd.add( dist );
-            System.out.println( dist );
-            x[i] = i;
-            y[i] = dist;
-            //maxdist = (dist > maxdist) ? dist : maxdist;
-            if (dist > maxdist) {
-                maxdist = dist;
-                maxpoint = a;
-            }
-            i++;
+        Point a;
+        Point centerpoint = new Point((int)roi_leaf.getContourCentroid()[0], (int)roi_leaf.getContourCentroid()[1]);
+        
+        for (int i=0;i<t3.npoints;i++) {
+           a = new Point(t3.xpoints[i], t3.ypoints[i]) ;
+           dist = Math.sqrt( Math.pow(a.getX() - centerpoint.getX(), 2) + Math.pow( a.getY() - centerpoint.getY(), 2 ) );
+           ccd.add( dist );
+           x[i] = i;
+           y[i] = dist;
+           //maxdist = (dist > maxdist) ? dist : maxdist;
+           if (dist > maxdist) {
+               maxdist = dist;
+               maxpoint = a;
+           }
         }
         
         if (maxpoint != null) {
@@ -177,31 +184,25 @@ public class Leaf_Classification implements PlugInFilter {
             rm.add( imp, roi_mp, 6 );
         }
         
-        // NMS
-        /*for (i = 0; i < y.length; i++) {
-            dist = y[i];
-            for (a = -10; a < 10; a++) {
-                
-            }
-        }*/
-        
         PlotWindow.noGridLines = false; // draw grid lines
         Plot plot = new Plot(imp.getShortTitle() + " Contour Distances","Contour Point","Distance",x,y);
-        plot.setLimits(0,anz, 0, maxdist);
+        plot.setLimits(0,t3.npoints, 0, maxdist);
         plot.setLineWidth(2);
         
      // add label
+        /*
         plot.setColor(Color.black);
         plot.changeFont(new Font("Helvetica", Font.PLAIN, 24));
-        plot.addLabel(0.15, 0.95, "This is a label");
+        plot.addLabel(0.15, 0.95, "This is a label");*/
 
         plot.changeFont(new Font("Helvetica", Font.PLAIN, 16));
         plot.setColor(Color.blue);
-        //plot.show();
+        plot.show();
+         
         
-        imp.hide();
+        //imp.hide();
         //rm.setVisible(false);
-        imp_bin.hide();
+        //imp_bin.hide();
     }
     
     public void findPetiole(ImageProcessor tip, ImagePlus timp) {
@@ -212,7 +213,7 @@ public class Leaf_Classification implements PlugInFilter {
         tip.setAutoThreshold("Moments", false, ImageProcessor.OVER_UNDER_LUT );
 
         Calibration cal = timp.getCalibration();
-        //ResultsTable rt = new ResultsTable();
+        ResultsTable rt_tmp = new ResultsTable();
         ResultsTable rt = ResultsTable.getResultsTable();
         RoiManager rm = RoiManager.getInstance();
         
@@ -220,12 +221,12 @@ public class Leaf_Classification implements PlugInFilter {
         ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.SHOW_NONE
             +ParticleAnalyzer.SHOW_RESULTS
             //+ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES
-            ,Measurements.RECT+Measurements.ELLIPSE, rt, minParticleSize, Double.POSITIVE_INFINITY,0,1);
+            ,Measurements.RECT+Measurements.ELLIPSE, rt_tmp, minParticleSize, Double.POSITIVE_INFINITY,0,1);
         pa.analyze(timp,tip);   // TODO: nur Blatt messen, nicht alle Objekte im Bild
         
         
         leaf leafCurrent = new leaf();
-        leafCurrent.setLeaf( rt, 0, cal ); //set initial attributes // TODO: nur aktuelle Ergebnisse hinzufügen
+        leafCurrent.setLeaf( rt_tmp, 0, cal ); //set initial attributes // TODO: nur aktuelle Ergebnisse hinzufügen
         leafCurrent.scanLeaf(tip);          //do a scan across the length to determine widths
         leafCurrent.findPetiole(tip);           //
         
@@ -277,7 +278,8 @@ public class Leaf_Classification implements PlugInFilter {
 		
         // open sample
         //ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/populus_tremula/Populus_tremula_20_MEW2014.png");
-        ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/acer_platanoides/Acer_platanoides_3_MEW2014.png");
+        //ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/acer_platanoides/Acer_platanoides_3_MEW2014.png");
+        ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/quercus_petraea/Quercus_petraea_13_MEW2014.png");
         image.show();
 
         // run the plugin
