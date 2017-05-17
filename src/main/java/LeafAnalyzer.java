@@ -7,13 +7,9 @@ import java.util.ArrayList;
 
 import ij.IJ;
 import ij.ImagePlus;
-import ij.gui.Line;
-import ij.gui.OvalRoi;
 import ij.gui.Plot;
 import ij.gui.PlotWindow;
-import ij.gui.PolygonRoi;
 import ij.gui.Roi;
-import ij.gui.TextRoi;
 import ij.measure.Calibration;
 import ij.measure.Measurements;
 import ij.measure.ResultsTable;
