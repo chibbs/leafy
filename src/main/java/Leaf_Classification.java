@@ -63,96 +63,38 @@ public class Leaf_Classification implements PlugInFilter {
 
     @Override
     public void run(ImageProcessor ip) {
-        
-        
-        
-        // convert to gray scale using blue channel
-        ColorProcessor cp = (ColorProcessor) ip;
-        cp.setRGBWeights( 0, 0, 1 );    
-        ByteProcessor bp_gray = cp.convertToByteProcessor();
+          
+        ByteProcessor bp_gray = LeafPreprocessor.convertToGray(ip);
         ImagePlus imp_gray = new ImagePlus(imp.getShortTitle() + " (grayscale)", bp_gray);
-        imp_gray.show();
+        //imp_gray.show();
         
-        int th = bp_gray.getAutoThreshold();
-        IJ.log( "Creating binary image... Threshold: " + th );
-        ByteProcessor bp_bin = cp.convertToByteProcessor();
-        bp_bin.threshold( th );     // background = white       -> IsoData algorithm
-        bp_bin.setBackgroundValue( 255 );   // used for rotate and scale
-        //bp_bin.setAutoThreshold(bp.ISODATA, bp.OVER_UNDER_LUT );
-        imp_gray.hide();
+        ByteProcessor bp_bin = LeafPreprocessor.convertToBinary(bp_gray);
+        //imp_gray.hide();
         ImagePlus imp_bin = new ImagePlus(imp.getShortTitle() + " (binarized)", bp_bin);
         imp_bin.show();
         
-        IJ.log("Apply morphologic filter: Close");
-        bp_bin.dilate();
-        bp_bin.erode();
-        // fill holes
-        imp_bin.updateAndDraw();
-        //IJ.run(imp_bin, "Fill Holes", "");
+        LeafPreprocessor.smoothBinary( imp_bin );
+        /*
+        imp = LeafPreprocessor.cropImage(imp, imp_bin.getRoi());    // Reihenfolge!
+        imp_gray = LeafPreprocessor.cropImage(imp_gray, imp_bin.getRoi());    // Reihenfolge!
+        imp_bin = LeafPreprocessor.cropImage(imp_bin);
+        bp_bin = (ByteProcessor) imp_bin.getProcessor();
         
-        ResultsTable rt_temp = new ResultsTable();
-        // https://imagej.nih.gov/ij/developer/source/ij/plugin/filter/ParticleAnalyzer.java.html
-        ParticleAnalyzer pat = new ParticleAnalyzer(
-                                 //ParticleAnalyzer.ADD_TO_MANAGER+
-                                 //ParticleAnalyzer.SHOW_OVERLAY_OUTLINES+
-                                 ParticleAnalyzer.INCLUDE_HOLES+
-                                 ParticleAnalyzer.RECORD_STARTS, 
-                                 Measurements.AREA, rt_temp, 10, Double.POSITIVE_INFINITY, 0, 1);
-        pat.analyze( imp_bin );
-        
-        int counter = rt_temp.getCounter();  //number of results
-        if (counter==0) {
-          //TODO:no results, handle that error here
-        }
-        int maxrow = 0;
-        if (counter > 1) {
-            int col = rt_temp.getColumnIndex("Area");
-            double area, maxarea = 0;
-            
-            for (int row=0; row<counter; row++) {
-              area = rt_temp.getValueAsDouble(col, row); //all the Area values
-              if (area > maxarea) {
-                  maxarea = area;
-                  maxrow = row;
-              }
-            }
-        }
-        Point stp = new Point((int)rt_temp.getValueAsDouble(rt_temp.getColumnIndex("XStart"), maxrow), (int)rt_temp.getValueAsDouble(rt_temp.getColumnIndex("YStart"), maxrow));
-        IJ.doWand(stp.x, stp.y);
-        
+        imp_bin.show();
+        IJ.run( "Create Selection" );
+        */
         RoiManager rm = RoiManager.getInstance();
         if (rm == null) 
             rm = new RoiManager();
+        
         Roi roi_leaf = imp_bin.getRoi();
         roi_leaf.setName( "Leaf" );
         rm.add( imp, roi_leaf, 0);
-        //rm.add( imp, imp_bin.getRoi(), 0 );
         
         IJ.run("Measure");
         
-        /*
-        //draw
-        double[] points = roi_leaf.getContourCentroid();
-        Polygon t = roi_leaf.getPolygon();
-        FloatPolygon t3 = roi_leaf.getInterpolatedPolygon();
-        
-        PlotWindow.noGridLines = false; // draw grid lines
-        Plot plot = new Plot("Test","x","y",t3.ypoints,t3.xpoints);
-        //Plot p = new Plot()
-        plot.setLimits(0,2000, 0, 2000);
-        plot.setLineWidth(2);
-
-        plot.setColor(Color.black);
-        plot.changeFont(new Font("Helvetica", Font.PLAIN, 24));
-        plot.addLabel(0.15, 0.95, "This is a label");
-
-        plot.changeFont(new Font("Helvetica", Font.PLAIN, 16));
-        plot.setColor(Color.blue);
-        plot.show();
-        */
-        
         // find petiole
-        findPetiole(cp.convertToByteProcessor(), imp_gray);
+        findPetiole(imp_gray);
         
         // calculate ccd
         double dist;
@@ -188,12 +130,6 @@ public class Leaf_Classification implements PlugInFilter {
         Plot plot = new Plot(imp.getShortTitle() + " Contour Distances","Contour Point","Distance",x,y);
         plot.setLimits(0,t3.npoints, 0, maxdist);
         plot.setLineWidth(2);
-        
-     // add label
-        /*
-        plot.setColor(Color.black);
-        plot.changeFont(new Font("Helvetica", Font.PLAIN, 24));
-        plot.addLabel(0.15, 0.95, "This is a label");*/
 
         plot.changeFont(new Font("Helvetica", Font.PLAIN, 16));
         plot.setColor(Color.blue);
@@ -205,9 +141,10 @@ public class Leaf_Classification implements PlugInFilter {
         //imp_bin.hide();
     }
     
-    public void findPetiole(ImageProcessor tip, ImagePlus timp) {
+    public void findPetiole(ImagePlus timp) {
         // copied from LeafJ
         IJ.log( "start find petiole" );
+        ImageProcessor tip = timp.getProcessor();
         
         tip.setAutoThreshold(ImageProcessor.ISODATA, ImageProcessor.OVER_UNDER_LUT );
         tip.setAutoThreshold("Moments", false, ImageProcessor.OVER_UNDER_LUT );
@@ -278,8 +215,8 @@ public class Leaf_Classification implements PlugInFilter {
 		
         // open sample
         //ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/populus_tremula/Populus_tremula_20_MEW2014.png");
-        //ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/acer_platanoides/Acer_platanoides_3_MEW2014.png");
-        ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/quercus_petraea/Quercus_petraea_13_MEW2014.png");
+        ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/acer_platanoides/Acer_platanoides_3_MEW2014.png");
+        //ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/quercus_petraea/Quercus_petraea_13_MEW2014.png");
         image.show();
 
         // run the plugin
