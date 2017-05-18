@@ -1,37 +1,19 @@
 import java.io.File;
-
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.measure.ResultsTable;
+import ij.plugin.PlugIn;
 
-public class Batch_Analyzer {
+public class Batch_Analyzer implements PlugIn {
 
-    public static void main(String[] args) {
+    @Override
+    public void run( String arg ) {
         String groundTruth = "";
-        // set the plugins.dir property to make the plugin appear in the Plugins menu
-        Class<?> clazz = Leaf_Classification.class;
-        String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
-        String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length());
-        System.setProperty("plugins.dir", pluginsDir);
-
-        // start ImageJ
-        new ImageJ();
-
-        /*
-        // open sample
-        //ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/populus_tremula/Populus_tremula_20_MEW2014.png");
-        ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/acer_platanoides/Acer_platanoides_3_MEW2014.png");
-        image.show();
-
-        // run the plugin
-        IJ.runPlugIn(clazz.getName(), "");*/
-
         // process folder
         String dir1 = IJ.getDirectory("Select source folder...");
         if (dir1==null) return;
-        //System.out.println( dir1 );
         String[] list = new File(dir1).list();
         if (list==null) return;
         for (int i=0; i<list.length; i++) {
@@ -43,7 +25,6 @@ public class Batch_Analyzer {
                 ImagePlus img = IJ.openImage(dir1+list[i]);
                 if (img==null) continue;
 
-                //cls = (new File(dir1+list[i])).getParentFile().getName();
                 if (list[i].contains( "_")) {
                     groundTruth = list[i].split( "_" )[0] + " " + list[i].split( "_" )[1];
                 } else {
@@ -53,9 +34,7 @@ public class Batch_Analyzer {
                 WindowManager.setTempCurrentImage(img);     // needed because image is not shown (no images open)
 
                 // run the plugin
-                img.show();
                 IJ.runPlugIn("Leaf_Classification", groundTruth);
-                //img.hide();
                 //IJ.saveAs(format, dir2+list[i]);
 
             }
@@ -66,6 +45,23 @@ public class Batch_Analyzer {
         close_windows();
         ResultsTable rt = ResultsTable.getResultsTable();
         rt.save( dir1 + "weka.csv" );
+    }
+
+    public static void main(String[] args) {
+
+        // set the plugins.dir property to make the plugin appear in the Plugins menu
+        Class<?> clazz = Batch_Analyzer.class;
+        String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
+        String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length());
+        System.setProperty("plugins.dir", pluginsDir);
+
+        // start ImageJ
+        new ImageJ();
+
+        //run the plugin
+        IJ.runPlugIn(clazz.getName(), "");
+
+
         IJ.run("Quit");
         System.exit( 0 );
     }
@@ -79,5 +75,4 @@ public class Batch_Analyzer {
             img.close();
         }
     }
-
 }
