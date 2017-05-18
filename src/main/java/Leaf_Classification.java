@@ -43,6 +43,7 @@ public class Leaf_Classification implements PlugInFilter {
 	la.analyze(currentleaf);
 	la.calcCCD(currentleaf);
 	// la.findPetiole( imp_gray ); // TODO: imageplus entfernen und nur mit roi messen
+	la.writeResults(currentleaf);
 
 	// imp.hide();
 	// rm.setVisible(false);

@@ -1,3 +1,6 @@
+import java.awt.Point;
+import java.awt.geom.Point2D;
+
 import ij.ImagePlus;
 import ij.gui.Roi;
 
@@ -9,8 +12,8 @@ public class Leaf {
     private Roi contour;
     private Roi hullroi;
     private Roi ellipseroi;
-    private double centroid;
-    private double[] ccd;
+    //private double[] ccd;		// TODO: ccd in eigene Klasse auslagern -> Methoden zum Darstellen, für meandist etc.
+    private RadialDistances ccd;
     private double circularity;
     private double roundness;
     private double solidity;
@@ -20,6 +23,12 @@ public class Leaf {
     private double mincaliper;
     private double area;
     private double perimeter;
+    private double convexity;
+    private double elliptic;
+    private double haralick1;
+    private double haralick2;
+    private double centroidX;
+    private double centroidY;
 
     public Leaf(ImagePlus img, String title, String leafclass) {
 	this.img = img;
@@ -32,7 +41,7 @@ public class Leaf {
 	this.title = title;
 	this.leafclass = leafclass;
 	this.contour = roi;
-	this.mask = mask;
+	this.setMask(mask);
     }
 
     public ImagePlus getImg() {
@@ -79,21 +88,6 @@ public class Leaf {
 	this.ellipseroi = ellipseroi;
     }
 
-    public double getCentroid() {
-	return this.centroid;
-    }
-
-    public void setCentroid(double centroid) {
-	this.centroid = centroid;
-    }
-
-    public double[] getCcd() {
-	return this.ccd;
-    }
-
-    public void setCcd(double[] ccd) {
-	this.ccd = ccd;
-    }
 
     public double getCircularity() {
 	return this.circularity;
@@ -165,6 +159,72 @@ public class Leaf {
 
     public void setPerimeter(double perimeter) {
 	this.perimeter = perimeter;
+    }
+
+    public ImagePlus getMask() {
+	return mask;
+    }
+
+    public void setMask(ImagePlus mask) {
+	if (mask.getType() != 0)
+	    throw new IllegalArgumentException("Masks must be 8bit grayscale images!");
+	this.mask = mask;
+    }
+
+    public double getConvexity() {
+	return convexity;
+    }
+
+    public void setConvexity(double convexity) {
+	this.convexity = convexity;
+    }
+
+    public double getElliptic() {
+	return elliptic;
+    }
+
+    public void setElliptic(double elliptic) {
+	this.elliptic = elliptic;
+    }
+
+    public double getHaralick1() {
+	return haralick1;
+    }
+
+    public void setHaralick1(double haralick1) {
+	this.haralick1 = haralick1;
+    }
+
+    public double getHaralick2() {
+	return haralick2;
+    }
+
+    public void setHaralick2(double haralick2) {
+	this.haralick2 = haralick2;
+    }
+
+    public RadialDistances getCcd() {
+	return ccd;
+    }
+
+    public void setCcd(RadialDistances ccd) {
+	this.ccd = ccd;
+    }
+
+    public double getCentroidX() {
+	return centroidX;
+    }
+
+    public void setCentroidX(double centroidX) {
+	this.centroidX = centroidX;
+    }
+
+    public double getCentroidY() {
+	return centroidY;
+    }
+
+    public void setCentroidY(double centroidY) {
+	this.centroidY = centroidY;
     }
 
 }
