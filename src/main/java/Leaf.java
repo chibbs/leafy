@@ -5,7 +5,7 @@ public class Leaf {
     private ImagePlus img;
     private String title;
     private String leafclass;
-    // private ImagePlus mask;
+    private ImagePlus mask;
     private Roi contour;
     private Roi hullroi;
     private Roi ellipseroi;
@@ -26,6 +26,14 @@ public class Leaf {
 	this.title = title;
 	this.leafclass = leafclass;
     }
+    
+    public Leaf(ImagePlus img, String title, String leafclass, Roi roi, ImagePlus mask) {
+	this.img = img;
+	this.title = title;
+	this.leafclass = leafclass;
+	this.contour = roi;
+	this.mask = mask;
+    }
 
     public ImagePlus getImg() {
 	return this.img;
@@ -45,10 +53,6 @@ public class Leaf {
 
     public String getLeafclass() {
 	return this.leafclass;
-    }
-
-    public void setLeafclass(String leafclass) {
-	this.leafclass = leafclass;
     }
 
     public Roi getContour() {

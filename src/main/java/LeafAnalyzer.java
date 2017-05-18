@@ -24,19 +24,10 @@ import ij.process.ImageProcessor;
 import jnmaloof.leafj.leaf;
 
 public class LeafAnalyzer {
-    private Polygon contour;
-    private Roi roi_leaf;
-    private String groundTruth;
 
-    public LeafAnalyzer( Roi roi_leaf, String cls )
-    {
-        this.roi_leaf = roi_leaf;
-        this.contour = roi_leaf.getPolygon();
-        this.groundTruth = cls;
-    }
-
-    public void analyze(ImagePlus imp) {
+    public void analyze(Leaf leaf) {
         //Roi roi_leaf = imp.getRoi();
+	ImagePlus imp = leaf.getImg();
         WindowManager.setTempCurrentImage(imp);
         /*RoiManager rm = RoiManager.getInstance();
         if (rm == null) 
@@ -114,7 +105,7 @@ public class LeafAnalyzer {
 
             rt.incrementCounter();
             rt.addValue( "Label", rt_temp.getLabel( 0 ) );
-            if (this.groundTruth != "") rt.addValue( "Class", this.groundTruth );
+            if (leaf.getLeafclass() != "") rt.addValue( "Class", leaf.getLeafclass() );
             //rt.addValue( "Elongation", elong );
             rt.addValue( "Circularity", circ );
             rt.addValue( "Roundness", round );
@@ -130,12 +121,13 @@ public class LeafAnalyzer {
 
     }
 
-    public void calcCCD() {
+    public void calcCCD(Leaf leaf) {
         // calculate ccd
+	Roi roi_leaf = leaf.getContour();
         double dist;
         ArrayList<Double> ccd = new ArrayList<Double>();
         //Polygon t3 = roi_leaf.getPolygon( );
-        Polygon t3 = this.contour;
+        Polygon t3 = roi_leaf.getPolygon();
         int pointcount = t3.npoints;
         double[] x = new double[t3.npoints];
         double[] y = new double[t3.npoints];

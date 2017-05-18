@@ -27,6 +27,8 @@ public class Leaf_Classification implements PlugInFilter {
 
 	Roi roi_leaf = imp_bin.getRoi();
 	this.imp.setRoi(roi_leaf, true);
+	
+	Leaf currentleaf = new Leaf(imp, imp.getShortTitle(), cls, roi_leaf, imp_bin);
 
 	/*RoiManager rm = RoiManager.getInstance();
 	if (rm == null)
@@ -37,9 +39,9 @@ public class Leaf_Classification implements PlugInFilter {
 	}*/
 
 
-	LeafAnalyzer la = new LeafAnalyzer(roi_leaf, this.cls);
-	la.analyze(imp_bin);
-	la.calcCCD();
+	LeafAnalyzer la = new LeafAnalyzer();	// TODO: Options übergeben
+	la.analyze(currentleaf);
+	la.calcCCD(currentleaf);
 	// la.findPetiole( imp_gray ); // TODO: imageplus entfernen und nur mit roi messen
 
 	// imp.hide();
