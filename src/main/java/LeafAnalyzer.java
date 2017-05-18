@@ -108,21 +108,22 @@ public class LeafAnalyzer {
     public void calcCCD(Leaf leaf) {
         // calculate ccd
 	double maxdist = 0;
-        double mindist = Double.MAX_VALUE;
         double meandist = 0; 
+        double nmeandist = 0;
         double vardist = 0;
-        double stdevdist, har, har2;
+        double nvardist = 0;
+        double stdevdist, nstdevdist, har, har2, har3, har4;
 	Roi roi_leaf = leaf.getContour();
 	int pointcount = 0;
-        double dist;
+        double dist, normdist;
         ArrayList<Double> ccd = new ArrayList<Double>();
+        ArrayList<Double> normccd = new ArrayList<Double>();
         int regionpoints = roi_leaf.getContainedPoints().length;
         int contourpoints = roi_leaf.getPolygon().npoints;
         for (Point p : roi_leaf) {
             dist = Math.sqrt( Math.pow(p.getX() - leaf.getCentroidX(), 2) + Math.pow( p.getY() - leaf.getCentroidY(), 2 ) );
             ccd.add( dist );
             maxdist = dist > maxdist ? dist : maxdist;
-            mindist = dist < mindist ? dist : mindist;
             meandist += dist;
             pointcount++;	// = regionpoints
         }
@@ -130,12 +131,25 @@ public class LeafAnalyzer {
         // Varianz berechnen -> TODO: gleich oben mitberechnen
         for (double d : ccd) {
             vardist = vardist + Math.pow(d - meandist, 2);
+            normdist = d / maxdist;
+            normccd.add(normdist);
+            nmeandist += normdist;
         }
         vardist /= (double) pointcount;
         stdevdist = Math.sqrt( vardist );
+        nmeandist /= (double) pointcount;
+        
+        for (double nd : normccd) {
+            nvardist += Math.pow(nd - nmeandist, 2);
+        }
+        nvardist /= (double) pointcount;
+        nstdevdist = Math.sqrt( nvardist );
+        
         har = meandist / stdevdist;
         har2 = stdevdist / meandist;
         
+        RadialDistances rd = new RadialDistances(ccd, maxdist, meandist, vardist, stdevdist, normccd, nmeandist, nstdevdist);
+        leaf.setCcd(rd);
         leaf.setHaralick1(har);
         leaf.setHaralick2(har2);
         
@@ -240,7 +254,6 @@ public class LeafAnalyzer {
     	rt.incrementCounter();
         rt.addValue( "Label", leaf.getTitle() );
         if (leaf.getLeafclass() != "") rt.addValue( "Class", leaf.getLeafclass() );
-        //rt.addValue( "Elongation", elong );
         rt.addValue( "Circularity", leaf.getCircularity() );
         rt.addValue( "Roundness", leaf.getRoundness() );
         rt.addValue( "Solidity", leaf.getSolidity() );
@@ -250,6 +263,8 @@ public class LeafAnalyzer {
         rt.addValue( "Elliptic", leaf.getElliptic() );
         rt.addValue( "Haralick1", leaf.getHaralick1() );
         rt.addValue( "Haralick2", leaf.getHaralick2());
+        rt.addValue( "nMeanDist", leaf.getCcd().getNormMean());
+        rt.addValue( "nDistSD", leaf.getCcd().getNormSdev());
         rt.show( "Results" );
     }
 }

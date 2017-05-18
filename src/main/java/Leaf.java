@@ -1,6 +1,3 @@
-import java.awt.Point;
-import java.awt.geom.Point2D;
-
 import ij.ImagePlus;
 import ij.gui.Roi;
 
@@ -12,7 +9,6 @@ public class Leaf {
     private Roi contour;
     private Roi hullroi;
     private Roi ellipseroi;
-    //private double[] ccd;		// TODO: ccd in eigene Klasse auslagern -> Methoden zum Darstellen, für meandist etc.
     private RadialDistances ccd;
     private double circularity;
     private double roundness;
