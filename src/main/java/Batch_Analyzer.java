@@ -63,7 +63,7 @@ public class Batch_Analyzer implements PlugIn {
 
 
         IJ.run("Quit");
-        System.exit( 0 );
+        //System.exit( 0 );
     }
 
     public static void close_windows() {
