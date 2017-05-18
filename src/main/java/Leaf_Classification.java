@@ -56,8 +56,8 @@ public class Leaf_Classification implements PlugInFilter {
         
         //imp_bin.hide();
         LeafAnalyzer la = new LeafAnalyzer(roi_leaf, cls); 
-        la.analyze(imp_bin); 
-        //la.calcCCD();
+        //la.analyze(imp_bin); 
+        la.calcCCD();
         //la.findPetiole( imp_gray ); // TODO: imageplus entfernen und nur mit roi messen
         //la.measureROI( roi_leaf, imp.getCalibration());
         
@@ -91,9 +91,10 @@ public class Leaf_Classification implements PlugInFilter {
 
 		
         // open sample
-        ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/populus_tremula/Populus_tremula_20_MEW2014.png");
+        //ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/populus_tremula/Populus_tremula_20_MEW2014.png");
         //ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/acer_platanoides/Acer_platanoides_3_MEW2014.png");
         //ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/quercus_petraea/Quercus_petraea_13_MEW2014.png");
+		ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder2/Betula_pubescens_16_MEW2014.png");
         image.show();
 
         // run the plugin

@@ -4,15 +4,18 @@ import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.Plot;
 import ij.gui.PlotWindow;
+import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.measure.Calibration;
 import ij.measure.Measurements;
 import ij.measure.ResultsTable;
+import ij.plugin.Selection;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.filter.ParticleAnalyzer;
 import ij.plugin.frame.RoiManager;
@@ -37,9 +40,10 @@ public class LeafAnalyzer {
         RoiManager rm = RoiManager.getInstance();
         if (rm == null) 
             rm = new RoiManager();
-        IJ.run("Interpolate", "interval=3 smooth");     // needed for moments calculation
+        IJ.run("Interpolate", "interval=1 smooth");     // needed for moments calculation
 
         ResultsTable rt_temp = new ResultsTable();
+        rt_temp.showRowNumbers( false );
         ResultsTable rt = ResultsTable.getResultsTable();
 
         /*// same as:
@@ -73,36 +77,54 @@ public class LeafAnalyzer {
             // TODO
         }
 
-        double area, circ, round, solid, majoraxis, minoraxis, skew, kurt, elliptic, ellipsarea = 0;
+        double area, convexlength, convexity, perim, circ, round, solid, majoraxis, minoraxis, skew, kurt, elliptic, ellipsarea = 0;
 
-        for (int row=0; row<counter; row++) {
-            circ = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Circ."), row);
-            round = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Round"), row);
-            solid = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Solidity"), row);
-            skew = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Skew"), row);
-            kurt = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Kurt"), row);
+            circ = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Circ."), 0);
+            round = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Round"), 0);
+            solid = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Solidity"), 0);
+            skew = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Skew"), 0);
+            kurt = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Kurt"), 0);
 
-            majoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Feret"), row);
-            minoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("MinFeret"), row);           
-            area = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Area"), row);
+            majoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Feret"), 0);
+            minoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("MinFeret"), 0); 
+            perim = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Perim."), 0);
+            area = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Area"), 0);
             ellipsarea = Math.PI * majoraxis * minoraxis / 4;   // durch 4 teilen, weil nur die Hälfte der Achsen benötigt wird (Radius statt Durchmesser)
             elliptic = area / ellipsarea;
             
             // TODO:  Rauhigkeit = Umfang / Umfang der konv. Hülle
+            Roi roi = imp.getRoi();
+            Polygon hull = roi.getConvexHull();
+            PolygonRoi roi_hull = new PolygonRoi(hull, Roi.TRACED_ROI);
+            imp.killRoi();
+            imp.setRoi( roi_hull, true );
+            imp.show();
+            rt_temp.reset();
+            an = new Analyzer(imp, Measurements.PERIMETER + Measurements.LABELS, rt_temp);
+            an.measure();
+            imp.killRoi();
+            imp.setRoi(roi);
+            counter = rt_temp.getCounter();
+            if (rt_temp.getCounter()==0) {
+                //TODO:no results, handle that error here
+            }
+            convexlength = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Perim."), 0);
+            convexity =  perim / convexlength;
 
             rt.incrementCounter();
-            rt.addValue( "Label", rt_temp.getLabel( row ) );
+            rt.addValue( "Label", rt_temp.getLabel( 0 ) );
             if (this.groundTruth != "") rt.addValue( "Class", this.groundTruth );
             //rt.addValue( "Elongation", elong );
             rt.addValue( "Circularity", circ );
-            rt.addValue( "Solidity", solid );
             rt.addValue( "Roundness", round );
+            rt.addValue( "Solidity", solid );
+            rt.addValue( "Convexity", convexity );
             rt.addValue( "Skewness", skew );
             rt.addValue( "Kurtosis", kurt );
             rt.addValue( "Elliptic", elliptic );
 
             // TODO: add moments
-        }
+        
 
 
     }
@@ -115,7 +137,7 @@ public class LeafAnalyzer {
         Polygon t3 = this.contour;
         double[] x = new double[t3.npoints];
         double[] y = new double[t3.npoints];
-        double maxdist = 0;
+        double maxdist = 0, mindist = Double.MAX_VALUE;
         Point maxpoint = null;
         Point a;
         Point centerpoint = new Point((int)roi_leaf.getContourCentroid()[0], (int)roi_leaf.getContourCentroid()[1]);
@@ -130,6 +152,7 @@ public class LeafAnalyzer {
                 maxdist = dist;
                 maxpoint = a;
             }
+            mindist = dist < mindist ? dist : mindist;
         }
 
         if (maxpoint != null) {
@@ -146,6 +169,37 @@ public class LeafAnalyzer {
         plot.changeFont(new Font("Helvetica", Font.PLAIN, 16));
         plot.setColor(Color.blue);
         plot.show();
+        
+        
+        // Histogram with bins
+        int bins = 360;
+        int b;
+        int values = y.length;
+        double[] H = new double[bins];
+        double[] Hx = Arrays.copyOfRange(x, 0, bins);
+        double normval;
+        double maxcount = 0;
+        // Histogramm with Binning
+        for (int i = 0; i < values; i++) {
+            normval = (y[i] - mindist) / (maxdist - mindist);
+            //b = (int) Math.floor( bins * normval / values );
+            //b = (int) Math.floor( y[i] * (double)bins / values );
+            b = (int) Math.floor( normval * (bins - 1) );
+            H[b]++;
+            maxcount = H[b] > maxcount ? H[b] : maxcount;
+        }
+        for (int i = 0; i < H.length; i++) {
+            H[i] = H[i] / maxcount * 100;
+        }
+        
+        PlotWindow.noGridLines = false; // draw grid lines
+        Plot plot2 = new Plot("CCD Histogram","Distance","Count in %",Hx,H);
+        plot2.setLimits(0,bins, 0, 100);
+        plot2.setLineWidth(2);
+
+        plot2.changeFont(new Font("Helvetica", Font.PLAIN, 16));
+        plot2.setColor(Color.blue);
+        plot2.show();
 
     }
 
