@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.WindowManager;
 import ij.gui.Plot;
 import ij.gui.PlotWindow;
 import ij.gui.PolygonRoi;
@@ -36,10 +37,10 @@ public class LeafAnalyzer {
 
     public void analyze(ImagePlus imp) {
         //Roi roi_leaf = imp.getRoi();
-        //WindowManager.setTempCurrentImage(imp);
-        RoiManager rm = RoiManager.getInstance();
+        WindowManager.setTempCurrentImage(imp);
+        /*RoiManager rm = RoiManager.getInstance();
         if (rm == null) 
-            rm = new RoiManager();
+            rm = new RoiManager();*/
         IJ.run("Interpolate", "interval=1 smooth");     // needed for moments calculation
 
         ResultsTable rt_temp = new ResultsTable();
@@ -98,7 +99,7 @@ public class LeafAnalyzer {
             PolygonRoi roi_hull = new PolygonRoi(hull, Roi.TRACED_ROI);
             imp.killRoi();
             imp.setRoi( roi_hull, true );
-            imp.show();
+            //imp.show();
             rt_temp.reset();
             an = new Analyzer(imp, Measurements.PERIMETER + Measurements.LABELS, rt_temp);
             an.measure();
@@ -122,10 +123,10 @@ public class LeafAnalyzer {
             rt.addValue( "Skewness", skew );
             rt.addValue( "Kurtosis", kurt );
             rt.addValue( "Elliptic", elliptic );
-
+            rt.show( "Results" );
             // TODO: add moments
         
-
+            WindowManager.setTempCurrentImage(null);
 
     }
 
@@ -135,14 +136,20 @@ public class LeafAnalyzer {
         ArrayList<Double> ccd = new ArrayList<Double>();
         //Polygon t3 = roi_leaf.getPolygon( );
         Polygon t3 = this.contour;
+        int pointcount = t3.npoints;
         double[] x = new double[t3.npoints];
         double[] y = new double[t3.npoints];
-        double maxdist = 0, mindist = Double.MAX_VALUE;
+        double maxdist = 0;
+        double mindist = Double.MAX_VALUE;
+        double meandist = 0;
+        double vardist = 0;
+        double stdevdist = 0;
+        double har = 0, har2 = 0;
         Point maxpoint = null;
         Point a;
         Point centerpoint = new Point((int)roi_leaf.getContourCentroid()[0], (int)roi_leaf.getContourCentroid()[1]);
 
-        for (int i=0;i<t3.npoints;i++) {
+        for (int i=0;i<pointcount;i++) {
             a = new Point(t3.xpoints[i], t3.ypoints[i]) ;
             dist = Math.sqrt( Math.pow(a.getX() - centerpoint.getX(), 2) + Math.pow( a.getY() - centerpoint.getY(), 2 ) );
             ccd.add( dist );
@@ -153,7 +160,23 @@ public class LeafAnalyzer {
                 maxpoint = a;
             }
             mindist = dist < mindist ? dist : mindist;
+            meandist += dist;
         }
+        meandist /= (double) pointcount;
+        // Varianz berechnen -> TODO: gleich oben mitberechnen
+        for (int i = 0; i < y.length; i++) {
+            double temp = y[i] - meandist;
+            double temp2 =  Math.pow(y[i] - meandist, 2);
+            vardist = vardist + Math.pow(y[i] - meandist, 2);
+        }
+        vardist /= (double) pointcount;
+        stdevdist = Math.sqrt( vardist );
+        har = meandist / stdevdist;
+        har2 = stdevdist / meandist;
+        ResultsTable rt = ResultsTable.getResultsTable();
+        rt.addValue( "Haralick", har );
+        rt.addValue( "Haralick2", har2 );
+        rt.show( "Results" );
 
         if (maxpoint != null) {
             Roi roi_mp = new Roi(new Rectangle((int)maxpoint.getX()-1, (int)maxpoint.getY()-1, 3, 3));
@@ -168,8 +191,11 @@ public class LeafAnalyzer {
 
         plot.changeFont(new Font("Helvetica", Font.PLAIN, 16));
         plot.setColor(Color.blue);
+        ImageProcessor ipp = plot.getProcessor();
         plot.show();
-        
+        ImagePlus impp = new ImagePlus("Plot", ipp);
+        WindowManager.setTempCurrentImage(impp);
+        IJ.save( "C:/Users/Laura/Desktop/test.png" );
         
         // Histogram with bins
         int bins = 360;
