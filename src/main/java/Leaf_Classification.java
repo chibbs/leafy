@@ -2,6 +2,7 @@
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.WindowManager;
 import ij.gui.Roi;
 import ij.plugin.filter.PlugInFilter;
 import ij.plugin.frame.RoiManager;
@@ -24,15 +25,14 @@ public class Leaf_Classification implements PlugInFilter {
 
     @Override
     public void run(ImageProcessor ip) {
-          
-        ByteProcessor bp_gray = LeafPreprocessor.convertToGray(ip);
-        ImagePlus imp_gray = new ImagePlus(imp.getShortTitle() + " (grayscale)", bp_gray);
+          String title = imp.getShortTitle();
+        ImagePlus imp_gray = LeafPreprocessor.convertToGray(imp, title);
+        //ImagePlus imp_gray = new ImagePlus(imp.getShortTitle() + " (grayscale)", bp_gray);
         //imp_gray.show();
         
-        ByteProcessor bp_bin = LeafPreprocessor.convertToBinary(bp_gray);
+        ImagePlus imp_bin = LeafPreprocessor.convertToBinary(imp_gray, title);
         //imp_gray.hide();
-        ImagePlus imp_bin = new ImagePlus(imp.getShortTitle() + " (binarized)", bp_bin);
-        imp_bin.show();
+        //imp_bin.show();
         
         LeafPreprocessor.smoothBinary( imp_bin );
         /*
@@ -44,11 +44,13 @@ public class Leaf_Classification implements PlugInFilter {
         imp_bin.show();
         IJ.run( "Create Selection" );
         */
+        
+        Roi roi_leaf = imp_bin.getRoi();
+        imp.setRoi( roi_leaf, true );
+        
         RoiManager rm = RoiManager.getInstance();
         if (rm == null) 
             rm = new RoiManager();
-        
-        Roi roi_leaf = imp_bin.getRoi();
         if (roi_leaf != null) {
             roi_leaf.setName( "Leaf" );
             rm.add( imp, roi_leaf, 0);
@@ -56,7 +58,7 @@ public class Leaf_Classification implements PlugInFilter {
         
         //imp_bin.hide();
         LeafAnalyzer la = new LeafAnalyzer(roi_leaf, cls); 
-        //la.analyze(imp_bin); 
+        la.analyze(imp_bin); 
         la.calcCCD();
         //la.findPetiole( imp_gray ); // TODO: imageplus entfernen und nur mit roi messen
         //la.measureROI( roi_leaf, imp.getCalibration());

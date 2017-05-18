@@ -2,6 +2,7 @@ import java.awt.Point;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.WindowManager;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.measure.Measurements;
@@ -13,32 +14,37 @@ import ij.process.ImageProcessor;
 
 public class LeafPreprocessor {
 
-    public static ByteProcessor convertToGray(ImageProcessor ip) {
+    public static ImagePlus convertToGray(ImagePlus imp, String title) {
+        // TODO: String title optional machen
+        ImageProcessor ip = imp.getProcessor();
         // convert to gray scale using blue channel
         ColorProcessor cp = (ColorProcessor) ip;
         cp.setRGBWeights( 0, 0, 1 );    
         ByteProcessor bp_gray = cp.convertToByteProcessor();
-        //ImagePlus imp_gray = new ImagePlus(imp.getShortTitle() + " (grayscale)", bp_gray);
-        //return imp_gray;
-        return bp_gray;
+        ImagePlus imp_gray = new ImagePlus(title + " (grayscale)", bp_gray);
+        return imp_gray;
+        //return bp_gray;
     }
 
-    public static ByteProcessor convertToBinary(ImageProcessor bp_gray) {
+    public static ImagePlus convertToBinary(ImagePlus imp_gray, String title) {
+        ImageProcessor bp_gray = imp_gray.getProcessor();
+        
         // TODO: Check ob grau oder RGB und convertToGray ggf. aufrufen
         int th = bp_gray.getAutoThreshold();
-        IJ.log( "Creating binary image... Threshold: " + th );
+        //IJ.log( "Creating binary image... Threshold: " + th );
         ByteProcessor bp_bin = (ByteProcessor) bp_gray.duplicate();
         bp_bin.threshold( th );     // background = white (needed for erode/dilate)      -> IsoData algorithm
 
         //bp_bin.setBackgroundValue( 255 );   // used for rotate and scale
         //bp_bin.setAutoThreshold(bp.ISODATA, bp.OVER_UNDER_LUT );
 
-        //ImagePlus imp_bin = new ImagePlus(imp.getShortTitle() + " (binarized)", bp_bin);
-        return bp_bin;
+        ImagePlus imp_bin = new ImagePlus(title + " (binarized)", bp_bin);
+        return imp_bin;
     }
 
     public static void smoothBinary(ImagePlus imp_bin){
-        IJ.log("Apply morphologic filter: Close");
+        WindowManager.setTempCurrentImage(imp_bin);
+        //IJ.log("Apply morphologic filter: Close");
         ByteProcessor bp_bin = (ByteProcessor) imp_bin.getProcessor();
         bp_bin.dilate();
         bp_bin.erode();
