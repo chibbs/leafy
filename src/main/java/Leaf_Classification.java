@@ -4,7 +4,6 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.Roi;
 import ij.plugin.filter.PlugInFilter;
-import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 
 public class Leaf_Classification implements PlugInFilter {
@@ -18,52 +17,30 @@ public class Leaf_Classification implements PlugInFilter {
 	this.imp = imp;
 	if (arg.length() > 0)
 	    this.cls = arg;
-	return DOES_RGB + DOES_8G; // this plugin accepts rgb images and 8-bit
-				   // grayscale images
+	return DOES_RGB + DOES_8G; // this plugin accepts rgb images and 8-bit grayscale images
     }
 
     @Override
     public void run(ImageProcessor ip) {
-	String title = this.imp.getShortTitle();
 
-	ImagePlus imp_gray = LeafPreprocessor.convertToGray(this.imp, title);
-	// ImagePlus imp_gray = new ImagePlus(imp.getShortTitle() + "
-	// (grayscale)", bp_gray);
-	// imp_gray.show();
-
-	ImagePlus imp_bin = LeafPreprocessor.convertToBinary(imp_gray, title);
-	// imp_gray.hide();
-	// imp_bin.show();
-
-	LeafPreprocessor.smoothBinary(imp_bin);
-	/*
-	 * imp = LeafPreprocessor.cropImage(imp, imp_bin.getRoi()); //
-	 * Reihenfolge! imp_gray = LeafPreprocessor.cropImage(imp_gray,
-	 * imp_bin.getRoi()); // Reihenfolge! imp_bin =
-	 * LeafPreprocessor.cropImage(imp_bin); bp_bin = (ByteProcessor)
-	 * imp_bin.getProcessor();
-	 * 
-	 * imp_bin.show(); IJ.run( "Create Selection" );
-	 */
+	ImagePlus imp_bin = LeafPreprocessor.preprocess(this.imp);
 
 	Roi roi_leaf = imp_bin.getRoi();
 	this.imp.setRoi(roi_leaf, true);
 
-	RoiManager rm = RoiManager.getInstance();
+	/*RoiManager rm = RoiManager.getInstance();
 	if (rm == null)
 	    rm = new RoiManager();
 	if (roi_leaf != null) {
 	    roi_leaf.setName("Leaf");
 	    rm.add(this.imp, roi_leaf, 0);
-	}
+	}*/
 
-	// imp_bin.hide();
+
 	LeafAnalyzer la = new LeafAnalyzer(roi_leaf, this.cls);
 	la.analyze(imp_bin);
 	la.calcCCD();
-	// la.findPetiole( imp_gray ); // TODO: imageplus entfernen und nur mit
-	// roi messen
-	// la.measureROI( roi_leaf, imp.getCalibration());
+	// la.findPetiole( imp_gray ); // TODO: imageplus entfernen und nur mit roi messen
 
 	// imp.hide();
 	// rm.setVisible(false);

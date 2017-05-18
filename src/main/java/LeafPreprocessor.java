@@ -13,6 +13,31 @@ import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
 public class LeafPreprocessor {
+    
+    public static ImagePlus preprocess (ImagePlus imp) {
+	int type = imp.getType();
+	String title = imp.getShortTitle();
+	ImagePlus imp_bin;
+	ImagePlus imp_gray;
+	
+	if (type == 4) {	// RGB image
+	    imp_gray = LeafPreprocessor.convertToGray(imp, title);
+	} else {
+	    imp_gray = imp;
+	}
+	
+	imp_bin = LeafPreprocessor.convertToBinary(imp_gray, title);
+	LeafPreprocessor.smoothBinary(imp_bin);
+	
+	//imp = LeafPreprocessor.cropImage(imp, imp_bin.getRoi()); //Reihenfolge! 
+	//imp_gray = LeafPreprocessor.cropImage(imp_gray,
+	//imp_bin.getRoi()); // Reihenfolge! 
+	//imp_bin = LeafPreprocessor.cropImage(imp_bin); 
+	//bp_bin = (ByteProcessor) imp_bin.getProcessor();
+	//IJ.run( "Create Selection" );
+	
+	return imp_bin;
+    }
 
     public static ImagePlus convertToGray(ImagePlus imp, String title) {
         // TODO: String title optional machen
