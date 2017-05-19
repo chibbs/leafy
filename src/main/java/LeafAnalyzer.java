@@ -112,15 +112,17 @@ public class LeafAnalyzer {
         double nmeandist = 0;
         double vardist = 0;
         double nvardist = 0;
-        double stdevdist, nstdevdist, har, har2, har3, har4;
+        double stdevdist, nstdevdist, har, har2;
 	Roi roi_leaf = leaf.getContour();
 	int pointcount = 0;
         double dist, normdist;
         ArrayList<Double> ccd = new ArrayList<Double>();
         ArrayList<Double> normccd = new ArrayList<Double>();
-        int regionpoints = roi_leaf.getContainedPoints().length;
         int contourpoints = roi_leaf.getPolygon().npoints;
-        for (Point p : roi_leaf) {
+        Polygon polygon = roi_leaf.getPolygon();
+        for (int i = 0; i < contourpoints; i++) {
+        //for (Point p : roi_leaf) {
+            Point p = new Point(polygon.xpoints[i], polygon.ypoints[i]) ;
             dist = Math.sqrt( Math.pow(p.getX() - leaf.getCentroidX(), 2) + Math.pow( p.getY() - leaf.getCentroidY(), 2 ) );
             ccd.add( dist );
             maxdist = dist > maxdist ? dist : maxdist;
