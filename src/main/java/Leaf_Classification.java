@@ -3,6 +3,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.Roi;
+import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
 
@@ -43,7 +44,8 @@ public class Leaf_Classification implements PlugInFilter {
 	la.analyze(currentleaf);
 	la.calcCCD(currentleaf);
 	// la.findPetiole( imp_gray ); // TODO: imageplus entfernen und nur mit roi messen
-	la.writeResults(currentleaf);
+	la.fillResultsTable(currentleaf);
+	ResultsTable.getResultsTable().show("Results");
 
 	// imp.hide();
 	// rm.setVisible(false);

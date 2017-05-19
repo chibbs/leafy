@@ -250,12 +250,11 @@ public class LeafAnalyzer {
         //timp.close();
     }
 
-    public void writeResults(Leaf leaf) {
+    public void fillResultsTable(Leaf leaf) {
     	ResultsTable rt = ResultsTable.getResultsTable();
     	rt.showRowNumbers( false );
     	rt.incrementCounter();
         rt.addValue( "Label", leaf.getTitle() );
-        if (leaf.getLeafclass() != "") rt.addValue( "Class", leaf.getLeafclass() );
         rt.addValue( "Circularity", leaf.getCircularity() );
         rt.addValue( "Roundness", leaf.getRoundness() );
         rt.addValue( "Solidity", leaf.getSolidity() );
@@ -263,10 +262,11 @@ public class LeafAnalyzer {
         rt.addValue( "Skewness", leaf.getSkewness() );
         rt.addValue( "Kurtosis", leaf.getKurtosis() );
         rt.addValue( "Elliptic", leaf.getElliptic() );
-        rt.addValue( "Haralick1", leaf.getHaralick1() );
+        //results.addValue( "Haralick1", leaf.getHaralick1() );
         rt.addValue( "Haralick2", leaf.getHaralick2());
         rt.addValue( "nMeanDist", leaf.getCcd().getNormMean());
         rt.addValue( "nDistSD", leaf.getCcd().getNormSdev());
-        rt.show( "Results" );
+        if (leaf.getLeafclass() != "") rt.addValue( "Class", leaf.getLeafclass() );
+
     }
 }
