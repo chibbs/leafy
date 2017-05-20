@@ -6,6 +6,8 @@ import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
+import weka.core.DenseInstance;
+import weka.core.Instance;
 
 public class Leaf_Classification implements PlugInFilter {
 
@@ -45,7 +47,16 @@ public class Leaf_Classification implements PlugInFilter {
 	la.calcCCD(currentleaf);
 	// la.findPetiole( imp_gray ); // TODO: imageplus entfernen und nur mit roi messen
 	la.fillResultsTable(currentleaf);
-	ResultsTable.getResultsTable().show("Results");
+	//ResultsTable.getResultsTable().show("Results");
+	
+	/*
+	// Create empty instance with three attribute values 
+	 Instance inst = new DenseInstance(3); 
+
+	 // Set instance's values for the attributes "length", "weight", and "position"
+	 inst.setValue(0, 5.3); 
+	 inst.setValue(1, 300); 
+	 inst.setValue(2, "first");*/
 
 	// imp.hide();
 	// rm.setVisible(false);

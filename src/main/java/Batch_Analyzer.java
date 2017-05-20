@@ -43,8 +43,19 @@ public class Batch_Analyzer implements PlugIn {
         IJ.showStatus("");
 
         close_windows();
-        ResultsTable rt = ResultsTable.getResultsTable();
-        rt.save( dir1 + "weka.csv" );
+        String dir2 = dir1 + "leaf.csv";
+        //LeafResultsTable rt = (LeafResultsTable) ResultsTable.getResultsTable();
+        /*ResultsTable rt = ResultsTable.getResultsTable();
+        rt.save( dir2);
+        //rt.saveAsArff(dir1 + "leaf.arff");*/
+        LeafClassifier lc = new LeafClassifier();
+        try {
+	    lc.train(dir2);
+	    lc.predict(dir2);
+	} catch (Exception e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
     }
 
     public static void main(String[] args) {

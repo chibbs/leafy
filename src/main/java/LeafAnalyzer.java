@@ -254,7 +254,12 @@ public class LeafAnalyzer {
     	ResultsTable rt = ResultsTable.getResultsTable();
     	rt.showRowNumbers( false );
     	rt.incrementCounter();
-        rt.addValue( "Label", leaf.getTitle() );
+        //rt.addValue( "Label", leaf.getTitle() );
+    	if (leaf.getLeafclass() != "") {
+            rt.addValue( "Class", leaf.getLeafclass() );
+        } else {
+            rt.addValue( "Class", "?" );
+        }
         rt.addValue( "Circularity", leaf.getCircularity() );
         rt.addValue( "Roundness", leaf.getRoundness() );
         rt.addValue( "Solidity", leaf.getSolidity() );
@@ -266,7 +271,8 @@ public class LeafAnalyzer {
         rt.addValue( "Haralick2", leaf.getHaralick2());
         rt.addValue( "nMeanDist", leaf.getCcd().getNormMean());
         rt.addValue( "nDistSD", leaf.getCcd().getNormSdev());
-        if (leaf.getLeafclass() != "") rt.addValue( "Class", leaf.getLeafclass() );
+        
+            
 
     }
 }
