@@ -5,6 +5,7 @@ import ij.ImagePlus;
 import ij.WindowManager;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
+import weka.core.Instances;
 
 public class Batch_Analyzer implements PlugIn {
 
@@ -45,13 +46,14 @@ public class Batch_Analyzer implements PlugIn {
         close_windows();
         String dir2 = dir1 + "leaf.csv";
         //LeafResultsTable rt = (LeafResultsTable) ResultsTable.getResultsTable();
-        /*ResultsTable rt = ResultsTable.getResultsTable();
+        ResultsTable rt = ResultsTable.getResultsTable();
         rt.save( dir2);
-        //rt.saveAsArff(dir1 + "leaf.arff");*/
+        //rt.saveAsArff(dir1 + "leaf.arff");
         LeafClassifier lc = new LeafClassifier();
         try {
 	    lc.train(dir2);
-	    lc.predict(dir2);
+	    Instances in = lc.buildInstances(rt);
+	    lc.predictSingle(dir2, in);
 	} catch (Exception e) {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
