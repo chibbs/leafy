@@ -8,6 +8,7 @@ import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
 import weka.core.DenseInstance;
 import weka.core.Instance;
+import weka.core.Instances;
 
 public class Leaf_Classification implements PlugInFilter {
 
@@ -48,6 +49,20 @@ public class Leaf_Classification implements PlugInFilter {
 	// la.findPetiole( imp_gray ); // TODO: imageplus entfernen und nur mit roi messen
 	la.fillResultsTable(currentleaf);
 	//ResultsTable.getResultsTable().show("Results");
+	/*LeafClassifier lc = new LeafClassifier();
+	Instances inst = lc.buildInstances(ResultsTable.getResultsTable());
+	String cls = "";
+	try {
+	    cls = lc.predictSingle(inst);
+	} catch (Exception e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+	roi_leaf = this.imp.getRoi();
+	roi_leaf.setName(cls);
+	this.imp.setRoi(roi_leaf);
+	IJ.run("Add Selection...");
+	IJ.run("Labels...", "color=white font=14 show use draw");*/
 	
 	/*
 	// Create empty instance with three attribute values 

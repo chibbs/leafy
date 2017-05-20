@@ -52,8 +52,8 @@ public class Batch_Analyzer implements PlugIn {
         LeafClassifier lc = new LeafClassifier();
         try {
 	    lc.train(dir2);
-	    Instances in = lc.buildInstances(rt);
-	    lc.predictSingle(dir2, in);
+	    //lc.buildInstances(rt);
+	    //lc.predictSingle(dir1 + "predict.csv");
 	} catch (Exception e) {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
