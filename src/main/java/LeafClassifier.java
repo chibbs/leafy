@@ -4,6 +4,7 @@ import weka.core.*;
 import weka.experiment.*;
 import weka.core.converters.ConverterUtils.DataSource;
 
+import java.io.InputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,7 +15,7 @@ import ij.measure.ResultsTable;
 
 public class LeafClassifier {
 
-    public final static String FILENAME = "src/main/resources/j48example.save";
+    public final static String FILENAME = "j48example.save";
 
     public void train(String path) throws Exception {
 	System.out.println("Training...");
@@ -161,11 +162,13 @@ public class LeafClassifier {
 
     public String predictSingle(Instances data) throws Exception {
 	System.out.println("Predicting...");
-	String path = "src/main/resources/j48tree.model";
+	//String path = "src/main/resources/j48tree.model";
+	String path = this.getClass().getResource(FILENAME).toExternalForm();
+	InputStream is = getClass().getResourceAsStream(FILENAME);
 	String cls = "Unknown";
 
 	// read model and header
-	Vector v = (Vector) SerializationHelper.read(FILENAME);
+	Vector v = (Vector) SerializationHelper.read(is);
 	Classifier cl = (Classifier) v.get(0);
 	Instances header = (Instances) v.get(1);
 
@@ -212,6 +215,10 @@ public class LeafClassifier {
 	    //System.out.print("ID: " + inst.value(0));
 	    System.out.print(", actual: " + data.classAttribute().value((int) inst.classValue()));
 	    System.out.println(", predicted: " + inst.classAttribute().value((int) pred));
+	    
+	    
+	    // get probabilities
+	    // http://stackoverflow.com/questions/31405503/weka-how-to-use-classifier-in-java
 	    double[] propabilities = cl.distributionForInstance(inst);
 	    System.out.println("Propabilities:");
 	    for (int a = 0; a < propabilities.length; a++) {

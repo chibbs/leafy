@@ -91,7 +91,36 @@
 		<dependency>
 		    <groupId>nz.ac.waikato.cms.weka</groupId>
 		    <artifactId>weka-stable</artifactId>
+		    <version>3.8.1</version>
+		    <exclusions>
+		        <exclusion>  <!-- declare the exclusion here -->
+		          <groupId>net.sourceforge.f2j</groupId>
+		          <artifactId>arpack_combined_all</artifactId>
+		        </exclusion>
+		        <exclusion>  <!-- declare the exclusion here -->
+		          <groupId>com.googlecode.netlib-java</groupId>
+		          <artifactId>netlib-java</artifactId>
+		        </exclusion>
+		        <exclusion>  <!-- declare the exclusion here -->
+		          <groupId>nz.ac.waikato.cms.weka.thirdparty</groupId>
+		          <artifactId>java-cup-11b</artifactId>
+		        </exclusion>
+		      </exclusions> 
 		</dependency>
 
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-compiler-plugin</artifactId>
+	            <configuration>
+	                <source>1.8</source>
+	                <target>1.8</target>
+	                <compilerArgument>-proc:none</compilerArgument>
+	            </configuration>
+	        </plugin>
+		</plugins>
+	</build>
 </project>
