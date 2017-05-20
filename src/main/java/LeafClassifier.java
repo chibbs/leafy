@@ -95,6 +95,7 @@ public class LeafClassifier {
 	    double pred = cl.classifyInstance(inst);
 	    String cls = inst.classAttribute().value((int) pred);
 	    System.out.println(inst.classValue() + " -> " + pred + " (" + cls + ")");
+	    System.out.println(cl.distributionForInstance(inst));
 	}
 
 	System.out.println("Predicting finished!");
@@ -157,7 +158,7 @@ public class LeafClassifier {
 
 	System.out.println("Predicting finished!");
     }
-    
+
     public String predictSingle(Instances data) throws Exception {
 	System.out.println("Predicting...");
 	String path = "src/main/resources/j48tree.model";
@@ -169,7 +170,6 @@ public class LeafClassifier {
 	Instances header = (Instances) v.get(1);
 
 	// output predictions
-	System.out.println("actual -> predicted");
 	for (int i1 = 0; i1 < data.numInstances(); i1++) {
 	    Instance curr = data.instance(i1);
 	    // create an instance for the classifier that fits the training data
@@ -209,10 +209,16 @@ public class LeafClassifier {
 	    cls = inst.classAttribute().value((int) pred);
 	    //System.out.println(inst.classValue() + " -> " + pred + " (" + cls + ")");
 
-		   //System.out.print("ID: " + inst.value(0));
-		   System.out.print(", actual: " + data.classAttribute().value((int) inst.classValue()));
-		   System.out.println(", predicted: " + inst.classAttribute().value((int) pred));
-		 
+	    //System.out.print("ID: " + inst.value(0));
+	    System.out.print(", actual: " + data.classAttribute().value((int) inst.classValue()));
+	    System.out.println(", predicted: " + inst.classAttribute().value((int) pred));
+	    double[] propabilities = cl.distributionForInstance(inst);
+	    System.out.println("Propabilities:");
+	    for (int a = 0; a < propabilities.length; a++) {
+		if (propabilities[a] != 0)
+		    System.out.println(inst.classAttribute().value(a) + ": " + propabilities[a]);
+	    }
+
 	}
 
 	System.out.println("Predicting finished!");
@@ -358,9 +364,9 @@ public class LeafClassifier {
 		if (Double.isNaN(numval)) {
 		    strval = rttmp.getStringValue(colindex, row);
 		    if (data.attribute(i).isNominal()) {
-		    
 
-		    vals[i] = attVals.indexOf(strval);
+
+			vals[i] = attVals.indexOf(strval);
 		    } else if (data.attribute(i).isString()) {
 			vals[i] = data.attribute(i).addStringValue(strval);
 		    }
