@@ -19,6 +19,7 @@ public class Leaf_Classification implements PlugInFilter {
 
     @Override
     public int setup(String arg, ImagePlus imp) {
+	imp.unlock();
 	this.imp = imp;
 	if (arg.length() > 0)
 	    this.modelpath = arg;
