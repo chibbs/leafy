@@ -96,7 +96,7 @@ public class Batch_Analyzer implements PlugIn {
             return;
         }
         try {
-	    lc.train(dir2, dir4);
+	    lc.train(dir3, dir4);
 	    //lc.buildInstances(rt);
 	    //lc.predictSingle(dir1 + "predict.csv");
 	} catch (Exception e) {
@@ -110,8 +110,9 @@ public class Batch_Analyzer implements PlugIn {
         // set the plugins.dir property to make the plugin appear in the Plugins menu
         Class<?> clazz = Batch_Analyzer.class;
         String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
-        //String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length());
-        //System.setProperty("plugins.dir", pluginsDir);
+        String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length() + clazz.getPackage().getName().length());
+        
+        System.setProperty("plugins.dir", pluginsDir);
 
         // start ImageJ
         new ImageJ();
@@ -120,7 +121,7 @@ public class Batch_Analyzer implements PlugIn {
         IJ.runPlugIn(clazz.getName(), "");
 
 
-        IJ.run("Quit");
+        //IJ.run("Quit");
         //System.exit( 0 );
     }
 
