@@ -18,7 +18,7 @@ public class LeafClassifier {
 	System.out.println("Training...");
 
 	// load training data from csv
-	DataSource source = new DataSource(csvpath);	// TODO: get rid of warnings
+	DataSource source = new DataSource(csvpath);
 	Instances data = source.getDataSet();
 	data.setClassIndex(0);
 	//data.setClassIndex(data.numAttributes() - 1);
@@ -27,7 +27,7 @@ public class LeafClassifier {
 	// train Tree
 	J48 tree = new J48();
 	// further options...
-	tree.buildClassifier(data);
+	tree.buildClassifier(data);	// TODO: get rid of warning
 
 	// save model + header
 	Vector v = new Vector();
@@ -111,6 +111,84 @@ public class LeafClassifier {
 	Classifier cl = (Classifier) v.get(0);
 	Instances header = (Instances) v.get(1);
 	is1.close();
+
+	// output predictions
+	for (int i1 = 0; i1 < data.numInstances(); i1++) {
+	    Instance curr = data.instance(i1);
+	    // create an instance for the classifier that fits the training data
+	    // Instances object returned here might differ slightly from the one
+	    // used during training the classifier, e.g., different order of
+	    // nominal values, different number of attributes.
+	    Instance inst = new DenseInstance(header.numAttributes());
+	    inst.setDataset(header);
+	    for (int n = 0; n < header.numAttributes(); n++) {
+		Attribute att = data.attribute(header.attribute(n).name());
+		// original attribute is also present in the current dataset
+		if (att != null) {
+		    if (att.isNominal()) {
+			// is this label also in the original data?
+			// Note:
+			// "numValues() > 0" is only used to avoid problems with nominal 
+			// attributes that have 0 labels, which can easily happen with
+			// data loaded from a database
+			if ((header.attribute(n).numValues() > 0) && (att.numValues() > 0)) {
+			    String label = curr.stringValue(att);
+			    int index = header.attribute(n).indexOfValue(label);
+			    if (index != -1)
+				inst.setValue(n, index);
+			}
+		    }
+		    else if (att.isNumeric()) {
+			inst.setValue(n, curr.value(att));
+		    }
+		    else {
+			throw new IllegalStateException("Unhandled attribute type! " + att.toString());
+		    }
+		}
+	    }
+
+	    // predict class
+	    double pred = cl.classifyInstance(inst);
+	    cls = inst.classAttribute().value((int) pred);
+	    //System.out.println(inst.classValue() + " -> " + pred + " (" + cls + ")");
+
+	    //System.out.print("ID: " + inst.value(0));
+	    System.out.print(", actual: " + data.classAttribute().value((int) inst.classValue()));
+	    System.out.println(", predicted: " + inst.classAttribute().value((int) pred));
+	    
+	    
+	    // get probabilities
+	    // http://stackoverflow.com/questions/31405503/weka-how-to-use-classifier-in-java
+	    double[] propabilities = cl.distributionForInstance(inst);
+	    System.out.println("Propabilities:");
+	    for (int a = 0; a < propabilities.length; a++) {
+		if (propabilities[a] != 0)
+		    System.out.println(inst.classAttribute().value(a) + ": " + propabilities[a]);
+	    }
+
+	}
+
+	System.out.println("Predicting finished!");
+	return cls;
+    }
+    public String predictSingle(Instances data, String modelpath) throws Exception {
+	System.out.println("Predicting...");
+	Vector v = new Vector(2);
+	String cls = "?";
+	
+	// read model and header
+	if (modelpath == "") {
+	    // read default model from jar
+        	InputStream is1 = getClass().getClassLoader().getResourceAsStream(FILENAME);
+        	v = (Vector) SerializationHelper.read(is1);
+        	is1.close();
+	} else {
+	    // read custom model from file system
+	    v = (Vector) SerializationHelper.read(modelpath);
+	}
+	Classifier cl = (Classifier) v.get(0);
+	Instances header = (Instances) v.get(1);
+	
 
 	// output predictions
 	for (int i1 = 0; i1 < data.numInstances(); i1++) {

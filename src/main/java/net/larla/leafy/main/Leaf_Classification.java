@@ -15,13 +15,13 @@ public class Leaf_Classification implements PlugInFilter {
 
     static boolean showContours = false;
     ImagePlus imp;
-    String cls = "";
+    String modelpath = "";
 
     @Override
     public int setup(String arg, ImagePlus imp) {
 	this.imp = imp;
 	if (arg.length() > 0)
-	    this.cls = arg;
+	    this.modelpath = arg;
 	return DOES_RGB + DOES_8G; // this plugin accepts rgb images and 8-bit grayscale images
     }
 
@@ -33,16 +33,7 @@ public class Leaf_Classification implements PlugInFilter {
 	Roi roi_leaf = imp_bin.getRoi();
 	this.imp.setRoi(roi_leaf, true);
 	
-	Leaf currentleaf = new Leaf(imp, imp.getShortTitle(), cls, roi_leaf, imp_bin);
-
-	/*RoiManager rm = RoiManager.getInstance();
-	if (rm == null)
-	    rm = new RoiManager();
-	if (roi_leaf != null) {
-	    roi_leaf.setName("Leaf");
-	    rm.add(this.imp, roi_leaf, 0);
-	}*/
-
+	Leaf currentleaf = new Leaf(imp, imp.getShortTitle(), "?", roi_leaf, imp_bin);
 
 	LeafAnalyzer la = new LeafAnalyzer();	// TODO: Options übergeben
 	la.analyze(currentleaf);
@@ -53,8 +44,9 @@ public class Leaf_Classification implements PlugInFilter {
 	LeafClassifier lc = new LeafClassifier();
 	Instances inst = lc.buildInstances(ResultsTable.getResultsTable());
 	String cls = "";
+
 	try {
-	    cls = lc.predictSingle(inst);
+	    cls = lc.predictSingle(inst, this.modelpath);
 	} catch (Exception e) {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
@@ -65,18 +57,6 @@ public class Leaf_Classification implements PlugInFilter {
 	IJ.run("Add Selection...");
 	IJ.run("Labels...", "color=white font=14 show use draw");
 	
-	/*
-	// Create empty instance with three attribute values 
-	 Instance inst = new DenseInstance(3); 
-
-	 // Set instance's values for the attributes "length", "weight", and "position"
-	 inst.setValue(0, 5.3); 
-	 inst.setValue(1, 300); 
-	 inst.setValue(2, "first");*/
-
-	// imp.hide();
-	// rm.setVisible(false);
-	// imp_bin.hide();
     }
 
     /**
@@ -93,8 +73,7 @@ public class Leaf_Classification implements PlugInFilter {
 	// menu
 	Class<?> clazz = Leaf_Classification.class;
 	String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
-	String pluginsDir = url.substring("file:".length(),
-		url.length() - clazz.getName().length() - ".class".length());
+	String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length() + clazz.getPackage().getName().length());
 	System.setProperty("plugins.dir", pluginsDir);
 
 	// start ImageJ
@@ -112,6 +91,7 @@ public class Leaf_Classification implements PlugInFilter {
 
 	// run the plugin
 	IJ.runPlugIn(clazz.getName(), "");
+	//IJ.runPlugIn("Leaf_Classification", "");
 
     }
 
