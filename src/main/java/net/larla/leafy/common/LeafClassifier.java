@@ -1,5 +1,6 @@
 package net.larla.leafy.common;
 import weka.classifiers.*;
+import weka.classifiers.meta.AdaBoostM1;
 import weka.classifiers.trees.*;
 import weka.core.*;
 import weka.core.converters.ConverterUtils.DataSource;
@@ -25,13 +26,14 @@ public class LeafClassifier {
 	String path = modelpath;
 
 	// train Tree
-	J48 tree = new J48();
-	// further options...
-	tree.buildClassifier(data);	// TODO: get rid of warning
+	AdaBoostM1 ab = new AdaBoostM1();
+	ab.setClassifier(new J48());
+	ab.setNumIterations(100);
+	ab.buildClassifier(data);
 
 	// save model + header
 	Vector<RevisionHandler> v = new Vector<RevisionHandler>();
-	v.add(tree);
+	v.add(ab);
 	v.add(new Instances(data, 0));
 	SerializationHelper.write(path, v);
 
