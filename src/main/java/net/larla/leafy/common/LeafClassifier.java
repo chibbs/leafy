@@ -14,14 +14,15 @@ public class LeafClassifier {
 
     public final static String FILENAME = "model/j48default.model";
 
-    public void train(String path) throws Exception {
+    public void train(String csvpath, String modelpath) throws Exception {
 	System.out.println("Training...");
 
 	// load training data from csv
-	DataSource source = new DataSource(path);
+	DataSource source = new DataSource(csvpath);	// TODO: get rid of warnings
 	Instances data = source.getDataSet();
 	data.setClassIndex(0);
 	//data.setClassIndex(data.numAttributes() - 1);
+	String path = modelpath;
 
 	// train Tree
 	J48 tree = new J48();
@@ -32,11 +33,9 @@ public class LeafClassifier {
 	Vector v = new Vector();
 	v.add(tree);
 	v.add(new Instances(data, 0));
-	PluginClassLoader pcl = new PluginClassLoader("leafy resources");
-	pcl.getResource("j48tree.model");
-	SerializationHelper.write(FILENAME, v);
+	SerializationHelper.write(path, v);
 
-	System.out.println("Training finished!");
+	System.out.println("Training finished!\nWrote classifier to " + modelpath);
     }
 
     @SuppressWarnings("rawtypes")

@@ -9,6 +9,7 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.Roi;
+import ij.io.SaveDialog;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import net.larla.leafy.common.*;
@@ -21,13 +22,13 @@ public class Batch_Analyzer implements PlugIn {
     public void run( String arg ) {
         String groundTruth = "";
         // process folder
-        String dir1 = IJ.getDirectory("Select source folder...");
+        String dir1 = IJ.getDirectory("Select folder with training images...");
         if (dir1==null) return;
         String[] list = new File(dir1).list();
         if (list==null) return;
         for (int i=0; i<list.length; i++) {
             IJ.showProgress(i, list.length);
-            IJ.log((i+1)+": "+list[i]+"  "+WindowManager.getImageCount());
+            //IJ.log((i+1)+": "+list[i]+"  "+WindowManager.getImageCount());
             IJ.showStatus(i+"/"+list.length);
             boolean isDir = (new File(dir1+list[i])).isDirectory();
             if (!isDir && !list[i].startsWith(".")) {
@@ -71,6 +72,7 @@ public class Batch_Analyzer implements PlugIn {
         //rt.saveAsArff(dir1 + "leaf.arff");
         LeafClassifier lc = new LeafClassifier();
         Instances inst = lc.buildInstances(rt);
+        
      // save weka data
         
         try {
@@ -85,8 +87,16 @@ public class Batch_Analyzer implements PlugIn {
 	    e1.printStackTrace();
 	}
         
+        //String dir4 = IJ.getDirectory("Select folder for classifier...");
+        SaveDialog sd = new SaveDialog("Save new classifier...", "myClassifier", ".model");
+        String dir4 = sd.getDirectory() + sd.getFileName();
+        //System.out.println(dir4);
+        if (dir4==null) {
+            rt.show("Features");
+            return;
+        }
         try {
-	    lc.train(dir2);
+	    lc.train(dir2, dir4);
 	    //lc.buildInstances(rt);
 	    //lc.predictSingle(dir1 + "predict.csv");
 	} catch (Exception e) {

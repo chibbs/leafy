@@ -14,7 +14,7 @@
 
 	<groupId>net.larla</groupId>
 	<artifactId>Leafy_</artifactId>
-	<version>0.3.2-SNAPSHOT</version>
+	<version>0.3.3-SNAPSHOT</version>
 
 	<name>Leafy</name>
 	<description>Classifiy tree species based on leaf images</description>
@@ -93,21 +93,22 @@
 		    <groupId>nz.ac.waikato.cms.weka</groupId>
 		    <artifactId>weka-stable</artifactId>
 		    <version>3.8.1</version>
-		    <exclusions>
+		    <exclusions> <!-- declare the exclusion here -->
 		        <exclusion>  
 		          <groupId>net.sourceforge.f2j</groupId>
 		          <artifactId>arpack_combined_all</artifactId>
 		        </exclusion>
-		        <exclusion>  <!-- declare the exclusion here -->
+		        <exclusion>
 		          <groupId>com.googlecode.netlib-java</groupId>
 		          <artifactId>netlib-java</artifactId>
 		        </exclusion>
-		        <exclusion>  <!-- declare the exclusion here -->
+		        <exclusion>  
 		          <groupId>nz.ac.waikato.cms.weka.thirdparty</groupId>
 		          <artifactId>java-cup-11b</artifactId>
 		        </exclusion>
-		      </exclusions> 
+		    </exclusions> 
 		</dependency>
+		
 	</dependencies>
 	
 	<build>
