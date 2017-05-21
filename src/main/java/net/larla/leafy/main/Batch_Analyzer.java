@@ -23,7 +23,8 @@ public class Batch_Analyzer implements PlugIn {
         String groundTruth = "";
         // process folder
         String dir1 = IJ.getDirectory("Select folder with training images...");
-        if (dir1==null) return;
+        if (dir1==null) 
+            return;
         String[] list = new File(dir1).list();
         if (list==null) return;
         for (int i=0; i<list.length; i++) {
@@ -91,8 +92,8 @@ public class Batch_Analyzer implements PlugIn {
         SaveDialog sd = new SaveDialog("Save new classifier...", "myClassifier", ".model");
         String dir4 = sd.getDirectory() + sd.getFileName();
         //System.out.println(dir4);
-        if (dir4==null) {	// TODO: test what happens if dialog is interrupted
-            rt.show("Features");
+        if (dir4.contains("null")) {
+            rt.show("Results");
             return;
         }
         try {
