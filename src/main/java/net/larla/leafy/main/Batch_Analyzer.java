@@ -91,7 +91,7 @@ public class Batch_Analyzer implements PlugIn {
         SaveDialog sd = new SaveDialog("Save new classifier...", "myClassifier", ".model");
         String dir4 = sd.getDirectory() + sd.getFileName();
         //System.out.println(dir4);
-        if (dir4==null) {
+        if (dir4==null) {	// TODO: test what happens if dialog is interrupted
             rt.show("Features");
             return;
         }

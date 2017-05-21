@@ -1,17 +1,9 @@
 package net.larla.leafy.main;
 
-import ij.IJ;
-import ij.ImageJ;
-import ij.ImagePlus;
-import ij.gui.Roi;
-import ij.io.OpenDialog;
-import ij.io.SaveDialog;
-import ij.measure.ResultsTable;
+import ij.*;
+import ij.io.*;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
-import net.larla.leafy.common.*;
-import net.larla.leafy.datamodel.*;
-import weka.core.Instances;
 
 public class Leaf_Classification_Custom implements PlugInFilter {
 
@@ -29,7 +21,7 @@ public class Leaf_Classification_Custom implements PlugInFilter {
     public void run(ImageProcessor ip) {
 	OpenDialog od = new OpenDialog("Select classifier...", OpenDialog.getLastDirectory(), "myCustom.model");
         String modelfilepath = od.getDirectory() + od.getFileName();
-        this.imp = new ImagePlus(this.imp.getShortTitle(), ip);
+        //this.imp = new ImagePlus(this.imp.getShortTitle(), ip);
 	IJ.runPlugIn("net.larla.leafy.main.Leaf_Classification", modelfilepath);
 	
     }

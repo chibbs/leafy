@@ -7,7 +7,6 @@ import weka.core.converters.ConverterUtils.DataSource;
 import java.io.InputStream;
 import java.util.*;
 
-import ij.io.PluginClassLoader;
 import ij.measure.ResultsTable;
 
 public class LeafClassifier {
@@ -30,74 +29,12 @@ public class LeafClassifier {
 	tree.buildClassifier(data);	// TODO: get rid of warning
 
 	// save model + header
-	Vector v = new Vector();
+	Vector<RevisionHandler> v = new Vector<RevisionHandler>();
 	v.add(tree);
 	v.add(new Instances(data, 0));
 	SerializationHelper.write(path, v);
 
 	System.out.println("Training finished!\nWrote classifier to " + modelpath);
-    }
-
-    @SuppressWarnings("rawtypes")
-    public void predict(String path) throws Exception {
-	// https://weka.wikispaces.com/Use+Weka+in+your+Java+code#Classifying%20instances
-	System.out.println("Predicting...");
-
-	// load data that needs predicting
-	DataSource source = new DataSource(path);
-	Instances data = source.getDataSet();
-	data.setClassIndex(1);
-	//data.setClassIndex(data.numAttributes() - 1);
-
-	// read model and header
-	Vector v = (Vector) SerializationHelper.read(FILENAME);
-	Classifier cl = (Classifier) v.get(0);
-	Instances header = (Instances) v.get(1);
-
-	// output predictions
-	System.out.println("actual -> predicted");
-	for (int i1 = 0; i1 < data.numInstances(); i1++) {
-	    Instance curr = data.instance(i1);
-	    // create an instance for the classifier that fits the training data
-	    // Instances object returned here might differ slightly from the one
-	    // used during training the classifier, e.g., different order of
-	    // nominal values, different number of attributes.
-	    Instance inst = new DenseInstance(header.numAttributes());
-	    inst.setDataset(header);
-	    for (int n = 0; n < header.numAttributes(); n++) {
-		Attribute att = data.attribute(header.attribute(n).name());
-		// original attribute is also present in the current dataset
-		if (att != null) {
-		    if (att.isNominal()) {
-			// is this label also in the original data?
-			// Note:
-			// "numValues() > 0" is only used to avoid problems with nominal 
-			// attributes that have 0 labels, which can easily happen with
-			// data loaded from a database
-			if ((header.attribute(n).numValues() > 0) && (att.numValues() > 0)) {
-			    String label = curr.stringValue(att);
-			    int index = header.attribute(n).indexOfValue(label);
-			    if (index != -1)
-				inst.setValue(n, index);
-			}
-		    }
-		    else if (att.isNumeric()) {
-			inst.setValue(n, curr.value(att));
-		    }
-		    else {
-			throw new IllegalStateException("Unhandled attribute type!");
-		    }
-		}
-	    }
-
-	    // predict class
-	    double pred = cl.classifyInstance(inst);
-	    String cls = inst.classAttribute().value((int) pred);
-	    System.out.println(inst.classValue() + " -> " + pred + " (" + cls + ")");
-	    System.out.println(cl.distributionForInstance(inst));
-	}
-
-	System.out.println("Predicting finished!");
     }
 
     public String predictSingle(Instances data) throws Exception {
@@ -107,7 +44,7 @@ public class LeafClassifier {
 	String cls = "?";
 
 	// read model and header
-	Vector v = (Vector) SerializationHelper.read(is1);
+	Vector<?> v = (Vector<?>) SerializationHelper.read(is1);
 	Classifier cl = (Classifier) v.get(0);
 	Instances header = (Instances) v.get(1);
 	is1.close();
@@ -173,18 +110,18 @@ public class LeafClassifier {
     }
     public String predictSingle(Instances data, String modelpath) throws Exception {
 	System.out.println("Predicting...");
-	Vector v = new Vector(2);
+	Vector<?> v = new Vector<Object>(2);
 	String cls = "?";
 	
 	// read model and header
 	if (modelpath == "") {
 	    // read default model from jar
         	InputStream is1 = getClass().getClassLoader().getResourceAsStream(FILENAME);
-        	v = (Vector) SerializationHelper.read(is1);
+        	v = (Vector<?>) SerializationHelper.read(is1);
         	is1.close();
 	} else {
 	    // read custom model from file system
-	    v = (Vector) SerializationHelper.read(modelpath);
+	    v = (Vector<?>) SerializationHelper.read(modelpath);
 	}
 	Classifier cl = (Classifier) v.get(0);
 	Instances header = (Instances) v.get(1);
@@ -231,7 +168,7 @@ public class LeafClassifier {
 	    //System.out.println(inst.classValue() + " -> " + pred + " (" + cls + ")");
 
 	    //System.out.print("ID: " + inst.value(0));
-	    System.out.print(", actual: " + data.classAttribute().value((int) inst.classValue()));
+	    System.out.print(", actual: " + data.classAttribute().value((int) inst.classValue()));	// TODO: fix problem with incompatible headers
 	    System.out.println(", predicted: " + inst.classAttribute().value((int) pred));
 	    
 	    
