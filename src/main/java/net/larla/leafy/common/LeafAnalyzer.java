@@ -148,51 +148,6 @@ public class LeafAnalyzer {
         leaf.setHaralick1(har);
         leaf.setHaralick2(har2);
         
-        
-        /*
-        PlotWindow.noGridLines = false; // draw grid lines
-        Plot plot = new Plot("Contour Distances","Contour Point","Distance",x,y);
-        plot.setLimits(0,t3.npoints, 0, maxdist);
-        plot.setLineWidth(2);
-
-        plot.changeFont(new Font("Helvetica", Font.PLAIN, 16));
-        plot.setColor(Color.blue);
-        ImageProcessor ipp = plot.getProcessor();
-        plot.show();
-        ImagePlus impp = new ImagePlus("Plot", ipp);
-        WindowManager.setTempCurrentImage(impp);
-        IJ.save( "C:/Users/Laura/Desktop/test.png" );
-        
-        // Histogram with bins
-        int bins = 360;
-        int b;
-        int values = y.length;
-        double[] H = new double[bins];
-        double[] Hx = Arrays.copyOfRange(x, 0, bins);
-        double normval;
-        double maxcount = 0;
-        // Histogramm with Binning
-        for (int i = 0; i < values; i++) {
-            normval = (y[i] - mindist) / (maxdist - mindist);
-            //b = (int) Math.floor( bins * normval / values );
-            //b = (int) Math.floor( y[i] * (double)bins / values );
-            b = (int) Math.floor( normval * (bins - 1) );
-            H[b]++;
-            maxcount = H[b] > maxcount ? H[b] : maxcount;
-        }
-        for (int i = 0; i < H.length; i++) {
-            H[i] = H[i] / maxcount * 100;
-        }
-        
-        PlotWindow.noGridLines = false; // draw grid lines
-        Plot plot2 = new Plot("CCD Histogram","Distance","Count in %",Hx,H);
-        plot2.setLimits(0,bins, 0, 100);
-        plot2.setLineWidth(2);
-
-        plot2.changeFont(new Font("Helvetica", Font.PLAIN, 16));
-        plot2.setColor(Color.blue);
-        plot2.show();
-	*/
     }
 
     

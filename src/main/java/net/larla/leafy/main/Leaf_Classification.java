@@ -8,8 +8,10 @@ import ij.io.OpenDialog;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
-import net.larla.leafy.common.*;
-import net.larla.leafy.datamodel.*;
+import net.larla.leafy.common.LeafAnalyzer;
+import net.larla.leafy.common.LeafClassifier;
+import net.larla.leafy.common.LeafPreprocessor;
+import net.larla.leafy.datamodel.Leaf;
 import weka.core.Instances;
 
 public class Leaf_Classification implements PlugInFilter {
@@ -21,10 +23,9 @@ public class Leaf_Classification implements PlugInFilter {
     @Override
     public int setup(String arg, ImagePlus imp) {
 	this.imp = imp;
-	IJ.log(arg);
 	if (arg.length() > 0 && arg.equals("custom")) {
 	    OpenDialog od = new OpenDialog("Select classifier...", OpenDialog.getLastDirectory(), "boosted.model");
-	    modelpath = od.getDirectory() + od.getFileName();
+	    this.modelpath = od.getDirectory() + od.getFileName();
 	}
 	return DOES_RGB + DOES_8G; // this plugin accepts rgb images and 8-bit grayscale images
     }
@@ -36,8 +37,8 @@ public class Leaf_Classification implements PlugInFilter {
 
 	Roi roi_leaf = imp_bin.getRoi();
 	this.imp.setRoi(roi_leaf, true);
-	
-	Leaf currentleaf = new Leaf(imp, imp.getShortTitle(), "?", roi_leaf, imp_bin);
+
+	Leaf currentleaf = new Leaf(this.imp, this.imp.getShortTitle(), "?", roi_leaf, imp_bin);
 
 	LeafAnalyzer la = new LeafAnalyzer();	// TODO: Options übergeben
 	la.analyze(currentleaf);
@@ -59,7 +60,7 @@ public class Leaf_Classification implements PlugInFilter {
 	this.imp.setRoi(roi_leaf);
 	IJ.run("Add Selection...");
 	IJ.run("Labels...", "color=white font=14 show use draw");
-	
+
     }
 
     /**
@@ -93,7 +94,7 @@ public class Leaf_Classification implements PlugInFilter {
 	image.show();
 
 	// run the plugin
-	IJ.runPlugIn(clazz.getName(), "");
+	IJ.runPlugIn(clazz.getName(), "custom");
 	//IJ.runPlugIn("Leaf_Classification", "");
 
     }
