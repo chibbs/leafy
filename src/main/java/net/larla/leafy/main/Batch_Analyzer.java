@@ -20,86 +20,80 @@ public class Batch_Analyzer implements PlugIn {
 
     @Override
     public void run( String arg ) {
-        String groundTruth = "";
-        // process folder
-        String dir1 = IJ.getDirectory("Select folder with training images...");
-        if (dir1==null) 
-            return;
-        String[] list = new File(dir1).list();
-        if (list==null) return;
-        for (int i=0; i<list.length; i++) {
-            IJ.showProgress(i, list.length);
-            //IJ.log((i+1)+": "+list[i]+"  "+WindowManager.getImageCount());
-            IJ.showStatus(i+"/"+list.length);
-            boolean isDir = (new File(dir1+list[i])).isDirectory();
-            if (!isDir && !list[i].startsWith(".")) {
-                ImagePlus img = IJ.openImage(dir1+list[i]);
-                if (img==null) continue;
+	LeafClassifier lc = new LeafClassifier();
+	String groundTruth = "";
+	// process folder
+	String dir1 = IJ.getDirectory("Select folder with training images...");
+	if (dir1==null) 
+	    return;
+	String dir3 = dir1 + "leaf.arff";
+	File f = new File(dir3);
+	if(!f.exists() || f.isDirectory()) {  // TODO: Teste ob arff-Datei schon existiert
+	    String[] list = new File(dir1).list();
+	    if (list==null) return;
+	    for (int i=0; i<list.length; i++) {
+		IJ.showProgress(i, list.length);
+		//IJ.log((i+1)+": "+list[i]+"  "+WindowManager.getImageCount());
+		IJ.showStatus(i+"/"+list.length);
+		boolean isDir = (new File(dir1+list[i])).isDirectory();
+		if (!isDir && !list[i].startsWith(".")) {
+		    ImagePlus img = IJ.openImage(dir1+list[i]);
+		    if (img==null) continue;
 
-                if (list[i].contains( "_")) {
-                    groundTruth = list[i].split( "_" )[0] + " " + list[i].split( "_" )[1];
-                } else {
-                    groundTruth = "";
-                }
+		    if (list[i].contains( "_")) {
+			groundTruth = list[i].split( "_" )[0] + " " + list[i].split( "_" )[1];
+		    } else {
+			groundTruth = "";
+		    }
 
-                 WindowManager.setTempCurrentImage(img);     // needed because image is not shown (no images open)
+		    WindowManager.setTempCurrentImage(img);     // needed because image is not shown (no images open)
 
-                // run the plugin
-                //IJ.runPlugIn("Leaf_Classification", groundTruth);
-                //IJ.saveAs(format, dir2+list[i]);
-                ImagePlus imp_bin = LeafPreprocessor.preprocess(img);
+		    // run the plugin
+		    ImagePlus imp_bin = LeafPreprocessor.preprocess(img);
 
-        	Roi roi_leaf = imp_bin.getRoi();
-        	img.setRoi(roi_leaf, true);
-        	
-        	Leaf currentleaf = new Leaf(img, img.getShortTitle(), groundTruth, roi_leaf, imp_bin);
+		    Roi roi_leaf = imp_bin.getRoi();
+		    img.setRoi(roi_leaf, true);
 
-        	LeafAnalyzer la = new LeafAnalyzer();	// TODO: Options übergeben
-        	la.analyze(currentleaf);
-        	la.calcCCD(currentleaf);
-        	la.fillResultsTable(currentleaf);
+		    Leaf currentleaf = new Leaf(img, img.getShortTitle(), groundTruth, roi_leaf, imp_bin);
 
-            }
-        }
-        IJ.showProgress(1.0);
-        IJ.showStatus("");
+		    LeafAnalyzer la = new LeafAnalyzer();	// TODO: Options übergeben
+		    la.analyze(currentleaf);
+		    la.calcCCD(currentleaf);
+		    la.fillResultsTable(currentleaf);
 
-        close_windows();
-        String dir2 = dir1 + "leaf.csv";
-        String dir3 = dir1 + "leaf.arff";
-        //LeafResultsTable rt = (LeafResultsTable) ResultsTable.getResultsTable();
-        ResultsTable rt = ResultsTable.getResultsTable();
-        rt.save( dir2);
-        //rt.saveAsArff(dir1 + "leaf.arff");
-        LeafClassifier lc = new LeafClassifier();
-        Instances inst = lc.buildInstances(rt);
-        
-     // save weka data
-        
-        try {
-            BufferedWriter writer = new BufferedWriter(
-                    new FileWriter(dir3));
-	    writer.write(inst.toString());
-	    writer.newLine();
-	        writer.flush();
-	        writer.close();
-	} catch (IOException e1) {
-	    // TODO Auto-generated catch block
-	    e1.printStackTrace();
+		}
+	    }
+	    IJ.showProgress(1.0);
+	    IJ.showStatus("");
+
+	    close_windows();
+	    String dir2 = dir1 + "leaf.csv";
+
+	    ResultsTable rt = ResultsTable.getResultsTable();
+	    rt.save( dir2);
+	    Instances inst = lc.buildInstances(rt);
+
+	    // save weka data
+	    try {
+		BufferedWriter writer = new BufferedWriter(
+			new FileWriter(dir3));
+		writer.write(inst.toString());
+		writer.newLine();
+		writer.flush();
+		writer.close();
+	    } catch (IOException e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	    }
+	} 
+	SaveDialog sd = new SaveDialog("Save new classifier...", "myClassifier", ".model");
+	String dir4 = sd.getDirectory() + sd.getFileName();
+	if (dir4.contains("null")) {
+	    //rt.show("Results");
+	    return;
 	}
-        
-        //String dir4 = IJ.getDirectory("Select folder for classifier...");
-        SaveDialog sd = new SaveDialog("Save new classifier...", "myClassifier", ".model");
-        String dir4 = sd.getDirectory() + sd.getFileName();
-        //System.out.println(dir4);
-        if (dir4.contains("null")) {
-            rt.show("Results");
-            return;
-        }
-        try {
+	try {
 	    lc.train(dir3, dir4);
-	    //lc.buildInstances(rt);
-	    //lc.predictSingle(dir1 + "predict.csv");
 	} catch (Exception e) {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
@@ -122,8 +116,8 @@ public class Batch_Analyzer implements PlugIn {
         IJ.runPlugIn(clazz.getName(), "");
 
 
-        //IJ.run("Quit");
-        //System.exit( 0 );
+        IJ.run("Quit");
+        System.exit( 0 );
     }
 
     public static void close_windows() {
