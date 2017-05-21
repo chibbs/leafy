@@ -1,3 +1,4 @@
+package net.larla.leafy.main;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -6,8 +7,8 @@ import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
-import weka.core.DenseInstance;
-import weka.core.Instance;
+import net.larla.leafy.common.*;
+import net.larla.leafy.datamodel.*;
 import weka.core.Instances;
 
 public class Leaf_Classification implements PlugInFilter {

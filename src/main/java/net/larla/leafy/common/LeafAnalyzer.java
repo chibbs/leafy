@@ -1,3 +1,4 @@
+package net.larla.leafy.common;
 import java.awt.Point;
 import java.awt.Polygon;
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ import ij.plugin.filter.Analyzer;
 import ij.plugin.filter.ParticleAnalyzer;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
-import jnmaloof.leafj.leaf;
+import net.larla.leafy.datamodel.*;
 
 public class LeafAnalyzer {
 
@@ -202,54 +203,7 @@ public class LeafAnalyzer {
 	*/
     }
 
-    public void findPetiole(ImagePlus imp_gray) {
-        // copied from LeafJ
-        IJ.log( "start find petiole" );
-        ImageProcessor tip = imp_gray.getProcessor();
-
-        tip.setAutoThreshold(ImageProcessor.ISODATA, ImageProcessor.OVER_UNDER_LUT );
-        //tip.setAutoThreshold("Moments", false, ImageProcessor.OVER_UNDER_LUT );
-
-        Calibration cal = imp_gray.getCalibration();
-        ResultsTable rt_tmp = new ResultsTable();
-        ResultsTable rt = ResultsTable.getResultsTable();
-        RoiManager rm = RoiManager.getInstance();
-
-        double minParticleSize = 4000;
-        ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.SHOW_NONE
-                                                   +ParticleAnalyzer.SHOW_RESULTS
-                                                   //+ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES
-                                                   ,Measurements.RECT+Measurements.ELLIPSE, rt_tmp, minParticleSize, Double.POSITIVE_INFINITY,0,1);
-        pa.analyze(imp_gray,tip);   // TODO: nur Blatt messen, nicht alle Objekte im Bild
-
-
-        leaf leafCurrent = new leaf();
-        leafCurrent.setLeaf( rt_tmp, 0, cal ); //set initial attributes // TODO: nur aktuelle Ergebnisse hinzufügen
-        leafCurrent.scanLeaf(tip);          //do a scan across the length to determine widths
-        leafCurrent.findPetiole(tip);           //
-
-        //timp.updateAndDraw();
-        IJ.log("end find Petiole");
-        leafCurrent.addPetioleToManager(imp_gray, tip, rm, 4);
-        leafCurrent.addBladeToManager(imp_gray, tip, rm, 5);
-
-        /*if (sd.saveRois) rm.runCommand("Save", imp.getShortTitle() + sd.getTruncatedDescription() + "_roi.zip");
-        results.setHeadings(sd.getFieldNames());
-        results.show();
-        results.addResults(sd,rm,tip,timp);*/
-
-        ResultsTable rt_temp = new ResultsTable();
-        Analyzer petioleAnalyzer = new Analyzer(imp_gray,  Measurements.PERIMETER , rt_temp);
-        petioleAnalyzer.measure();
-        rt_temp.getValue("Perim.",rt_temp.getCounter()-1);
-        rt.addValue( "Petiole Length", rt_temp.getValue("Perim.",rt_temp.getCounter()-1) );
-        //rt.addValue( "Class", cls );
-
-        rt.show( "Results" );
-
-        //timp.close();
-    }
-
+    
     public void fillResultsTable(Leaf leaf) {
     	ResultsTable rt = ResultsTable.getResultsTable();
     	rt.showRowNumbers( false );

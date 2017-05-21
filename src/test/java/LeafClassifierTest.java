@@ -2,6 +2,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import ij.measure.ResultsTable;
+import net.larla.leafy.common.LeafClassifier;
 import weka.core.Instances;
 
 public class LeafClassifierTest {

@@ -1,3 +1,4 @@
+package net.larla.leafy.main;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -10,6 +11,8 @@ import ij.WindowManager;
 import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
+import net.larla.leafy.common.*;
+import net.larla.leafy.datamodel.*;
 import weka.core.Instances;
 
 public class Batch_Analyzer implements PlugIn {

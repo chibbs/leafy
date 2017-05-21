@@ -1,3 +1,4 @@
+package net.larla.leafy.common;
 import java.awt.Point;
 
 import ij.IJ;

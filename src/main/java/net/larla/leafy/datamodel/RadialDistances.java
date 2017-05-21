@@ -1,3 +1,4 @@
+package net.larla.leafy.datamodel;
 import java.util.ArrayList;
 
 public class RadialDistances {

@@ -1,3 +1,4 @@
+package net.larla.leafy.datamodel;
 import ij.ImagePlus;
 import ij.gui.Roi;
 
