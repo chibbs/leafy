@@ -4,6 +4,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.Roi;
+import ij.io.OpenDialog;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
@@ -19,10 +20,12 @@ public class Leaf_Classification implements PlugInFilter {
 
     @Override
     public int setup(String arg, ImagePlus imp) {
-	imp.unlock();
 	this.imp = imp;
-	if (arg.length() > 0)
-	    this.modelpath = arg;
+	IJ.log(arg);
+	if (arg.length() > 0 && arg.equals("custom")) {
+	    OpenDialog od = new OpenDialog("Select classifier...", OpenDialog.getLastDirectory(), "boosted.model");
+	    modelpath = od.getDirectory() + od.getFileName();
+	}
 	return DOES_RGB + DOES_8G; // this plugin accepts rgb images and 8-bit grayscale images
     }
 
@@ -39,7 +42,6 @@ public class Leaf_Classification implements PlugInFilter {
 	LeafAnalyzer la = new LeafAnalyzer();	// TODO: Options übergeben
 	la.analyze(currentleaf);
 	la.calcCCD(currentleaf);
-	// la.findPetiole( imp_gray ); // TODO: imageplus entfernen und nur mit roi messen
 	la.fillResultsTable(currentleaf);
 	//ResultsTable.getResultsTable().show("Results");
 	LeafClassifier lc = new LeafClassifier();
