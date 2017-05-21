@@ -3,18 +3,10 @@ import java.awt.Point;
 import java.awt.Polygon;
 import java.util.ArrayList;
 
-import ij.IJ;
-import ij.ImagePlus;
-import ij.WindowManager;
-import ij.gui.PolygonRoi;
-import ij.gui.Roi;
-import ij.measure.Calibration;
-import ij.measure.Measurements;
-import ij.measure.ResultsTable;
+import ij.*;
+import ij.gui.*;
+import ij.measure.*;
 import ij.plugin.filter.Analyzer;
-import ij.plugin.filter.ParticleAnalyzer;
-import ij.plugin.frame.RoiManager;
-import ij.process.ImageProcessor;
 import net.larla.leafy.datamodel.*;
 
 public class LeafAnalyzer {
