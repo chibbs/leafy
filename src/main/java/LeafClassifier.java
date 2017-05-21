@@ -5,12 +5,15 @@ import weka.experiment.*;
 import weka.core.converters.ConverterUtils.DataSource;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
 
+import ij.IJ;
+import ij.io.PluginClassLoader;
 import ij.measure.ResultsTable;
 
 public class LeafClassifier {
@@ -35,6 +38,8 @@ public class LeafClassifier {
 	Vector v = new Vector();
 	v.add(tree);
 	v.add(new Instances(data, 0));
+	PluginClassLoader pcl = new PluginClassLoader("leafy resources");
+	pcl.getResource("j48tree.model");
 	SerializationHelper.write(FILENAME, v);
 
 	System.out.println("Training finished!");
@@ -163,14 +168,16 @@ public class LeafClassifier {
     public String predictSingle(Instances data) throws Exception {
 	System.out.println("Predicting...");
 	//String path = "src/main/resources/j48tree.model";
-	String path = this.getClass().getResource(FILENAME).toExternalForm();
-	InputStream is = getClass().getResourceAsStream(FILENAME);
-	String cls = "Unknown";
+	//String path = this.getClass().getResource(FILENAME).toExternalForm();
+	InputStream is1 = getClass().getResourceAsStream(FILENAME);
+	InputStream is = IJ.getClassLoader().getClass().getResourceAsStream(FILENAME);
+	String cls = "?";
 
 	// read model and header
-	Vector v = (Vector) SerializationHelper.read(is);
+	Vector v = (Vector) SerializationHelper.read(is1);
 	Classifier cl = (Classifier) v.get(0);
 	Instances header = (Instances) v.get(1);
+	is1.close();
 
 	// output predictions
 	for (int i1 = 0; i1 < data.numInstances(); i1++) {
