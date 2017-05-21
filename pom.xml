@@ -14,7 +14,7 @@
 
 	<groupId>net.larla</groupId>
 	<artifactId>Leafy_</artifactId>
-	<version>0.3.4-SNAPSHOT</version>
+	<version>0.3.5-SNAPSHOT</version>
 
 	<name>Leafy</name>
 	<description>Classifiy tree species based on leaf images</description>

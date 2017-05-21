@@ -20,7 +20,7 @@ public class Batch_Analyzer implements PlugIn {
 
     @Override
     public void run( String arg ) {
-	LeafClassifier lc = new LeafClassifier();
+	//LeafClassifier lc = new LeafClassifier();
 	String groundTruth = "";
 	// process folder
 	String dir1 = IJ.getDirectory("Select folder with training images...");
@@ -57,7 +57,7 @@ public class Batch_Analyzer implements PlugIn {
 		    Leaf currentleaf = new Leaf(img, img.getShortTitle(), groundTruth, roi_leaf, imp_bin);
 
 		    LeafAnalyzer la = new LeafAnalyzer();	// TODO: Options übergeben
-		    la.analyze(currentleaf);
+		    la.runAnalyzer(currentleaf);
 		    la.calcCCD(currentleaf);
 		    la.fillResultsTable(currentleaf);
 
@@ -71,7 +71,7 @@ public class Batch_Analyzer implements PlugIn {
 
 	    ResultsTable rt = ResultsTable.getResultsTable();
 	    rt.save( dir2);
-	    Instances inst = lc.buildInstances(rt);
+	    Instances inst = LeafClassifier.buildInstances(rt);
 
 	    // save weka data
 	    try {
@@ -92,12 +92,10 @@ public class Batch_Analyzer implements PlugIn {
 	    //rt.show("Results");
 	    return;
 	}
-	try {
-	    lc.train(dir3, dir4);
-	} catch (Exception e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	}
+
+	    LeafClassifier customClassifier = LeafClassifier.train(dir3);
+	    customClassifier.saveModel(dir4);
+
     }
 
     public static void main(String[] args) {

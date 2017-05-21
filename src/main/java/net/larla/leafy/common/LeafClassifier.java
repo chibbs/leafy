@@ -1,56 +1,121 @@
 package net.larla.leafy.common;
-import weka.classifiers.*;
-import weka.classifiers.meta.AdaBoostM1;
-import weka.classifiers.trees.*;
-import weka.core.*;
-import weka.core.converters.ConverterUtils.DataSource;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Vector;
 
 import ij.IJ;
 import ij.measure.ResultsTable;
+import net.larla.leafy.datamodel.Leaf;
+import weka.classifiers.Classifier;
+import weka.classifiers.meta.AdaBoostM1;
+import weka.classifiers.trees.J48;
+import weka.core.Attribute;
+import weka.core.DenseInstance;
+import weka.core.Instance;
+import weka.core.Instances;
+import weka.core.SerializationHelper;
+import weka.core.converters.ConverterUtils.DataSource;
 
 public class LeafClassifier {
 
     public final static String FILENAME = "model/j48default.model";
+    private Classifier classifier;
+    private Instances header;
 
-    public void train(String csvpath, String modelpath) throws Exception {
-	System.out.println("Training...");
+    public LeafClassifier(Classifier classifier, Instances header) {
+	super();
+	this.classifier = classifier;
+	this.header = header;
+    }
+
+    public LeafClassifier (String path) {
+	Vector<?> v = new Vector<Object>(2);
+
+	// read model and header
+	if (path == "") {
+	    // read default model from jar
+	    IJ.log("\tload default classifier");
+	    InputStream is1 = this.getClass().getClassLoader().getResourceAsStream(FILENAME);
+	    try {
+		v = (Vector<?>) SerializationHelper.read(is1);
+	    } catch (Exception e) {
+		e.printStackTrace();
+		throw new UnsupportedOperationException("Classifier model could not be loaded.");
+	    }
+
+	    try {
+		is1.close();
+	    } catch (IOException e) {
+		// handling not needed
+		e.printStackTrace();
+	    }
+	} else {
+	    // read custom model from file system
+
+	    try {
+		v = (Vector<?>) SerializationHelper.read(path);
+	    } catch (Exception e) {
+		e.printStackTrace();
+		throw new UnsupportedOperationException("Classifier model could not be loaded.");
+	    }
+
+	    IJ.log("\tload classifier from " + path);
+	}
+	this.classifier = (Classifier) v.get(0);
+	this.header = (Instances) v.get(1);
+
+    }
+
+    public static LeafClassifier train(String datapath) {
+	IJ.log("Training classifier with data from " + datapath + "...");
 
 	// load training data from csv
-	DataSource source = new DataSource(csvpath);
-	Instances data = source.getDataSet();
+	DataSource source;
+	Instances data;
+	try {
+	    source = new DataSource(datapath);
+	    data = source.getDataSet();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    throw new IllegalArgumentException("Training data could not be loaded.");
+	}
 	data.setClassIndex(0);
 	//data.setClassIndex(data.numAttributes() - 1);
-	String path = modelpath;
 
 	// train Tree
 	AdaBoostM1 ab = new AdaBoostM1();
 	ab.setClassifier(new J48());
 	ab.setNumIterations(100);
-	ab.buildClassifier(data);
+	try {
+	    ab.buildClassifier(data);
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    throw new IllegalStateException("Classifier could not be built.");
+	}
+	IJ.log("Training finished!");
 
-	// save model + header
-	Vector<RevisionHandler> v = new Vector<RevisionHandler>();
-	v.add(ab);
-	v.add(new Instances(data, 0));
-	SerializationHelper.write(path, v);
+	LeafClassifier lc = new LeafClassifier(ab, new Instances(data, 0));
 
-	System.out.println("Training finished!\nWrote classifier to " + modelpath);
+	return lc;
     }
 
-    public String predictSingle(Instances data) throws Exception {
-	System.out.println("Predicting...");
-	InputStream is1 = getClass().getClassLoader().getResourceAsStream(FILENAME);
-	
-	String cls = "?";
+    public String predictSingle(Leaf currentleaf) {
+	// TODO: error handling in try/catch-Blöcken!!!
 
-	// read model and header
-	Vector<?> v = (Vector<?>) SerializationHelper.read(is1);
-	Classifier cl = (Classifier) v.get(0);
-	Instances header = (Instances) v.get(1);
-	is1.close();
+	IJ.log("Predicting...");
+	String cls = "";
+	double[] propabilities = null;
+	double pred = -1.0;
+	double actclassnum;
+	String actclass = currentleaf.getLeafclass();
+	if (this.classifier == null || this.header == null) {
+	    throw new IllegalStateException("Classification not possible: no classifier present.");
+	}
+
+	Instances data = buildInstances(ResultsTable.getResultsTable());	// TODO: not from table but from leaf!
 
 	// output predictions
 	for (int i1 = 0; i1 < data.numInstances(); i1++) {
@@ -59,21 +124,21 @@ public class LeafClassifier {
 	    // Instances object returned here might differ slightly from the one
 	    // used during training the classifier, e.g., different order of
 	    // nominal values, different number of attributes.
-	    Instance inst = new DenseInstance(header.numAttributes());
-	    inst.setDataset(header);
-	    for (int n = 0; n < header.numAttributes(); n++) {
-		Attribute att = data.attribute(header.attribute(n).name());
+	    Instance inst = new DenseInstance(this.header.numAttributes());
+	    inst.setDataset(this.header);
+	    for (int n = 0; n < this.header.numAttributes(); n++) {
+		Attribute att = data.attribute(this.header.attribute(n).name());
 		// original attribute is also present in the current dataset
 		if (att != null) {
 		    if (att.isNominal()) {
 			// is this label also in the original data?
 			// Note:
-			// "numValues() > 0" is only used to avoid problems with nominal 
+			// "numValues() > 0" is only used to avoid problems with nominal
 			// attributes that have 0 labels, which can easily happen with
 			// data loaded from a database
-			if ((header.attribute(n).numValues() > 0) && (att.numValues() > 0)) {
+			if ((this.header.attribute(n).numValues() > 0) && (att.numValues() > 0)) {
 			    String label = curr.stringValue(att);
-			    int index = header.attribute(n).indexOfValue(label);
+			    int index = this.header.attribute(n).indexOfValue(label);
 			    if (index != -1)
 				inst.setValue(n, index);
 			}
@@ -88,111 +153,39 @@ public class LeafClassifier {
 	    }
 
 	    // predict class
-	    double pred = cl.classifyInstance(inst);
-	    cls = inst.classAttribute().value((int) pred);
-	    //System.out.println(inst.classValue() + " -> " + pred + " (" + cls + ")");
+	    try {
+		pred = this.classifier.classifyInstance(inst);
+	    } catch (Exception e) {
+		e.printStackTrace();
+		throw new UnsupportedOperationException("Classification not possible");
+	    }
+	    cls = this.header.classAttribute().value((int) pred);
+	    actclassnum = inst.classValue();
+	    if (Double.isNaN(actclassnum))
+		actclassnum = -1;
+	    IJ.log("actual: " + actclass + " (" + (int)actclassnum + "), predicted: " + cls + " (" + (int)pred + ")");
 
-	    //System.out.print("ID: " + inst.value(0));
-	    System.out.print(", actual: " + data.classAttribute().value((int) inst.classValue()));
-	    System.out.println(", predicted: " + inst.classAttribute().value((int) pred));
-	    
-	    
+
 	    // get probabilities
 	    // http://stackoverflow.com/questions/31405503/weka-how-to-use-classifier-in-java
-	    double[] propabilities = cl.distributionForInstance(inst);
-	    System.out.println("Propabilities:");
-	    for (int a = 0; a < propabilities.length; a++) {
-		if (propabilities[a] != 0)
-		    System.out.println(inst.classAttribute().value(a) + ": " + propabilities[a]);
-	    }
-
-	}
-
-	System.out.println("Predicting finished!");
-	return cls;
-    }
-    public String predictSingle(Instances data, String modelpath) throws Exception {
-	System.out.println("Predicting...");
-	Vector<?> v = new Vector<Object>(2);
-	String cls = "?";
-	
-	// read model and header
-	if (modelpath == "") {
-	    // read default model from jar
-	    IJ.log("load default classifier");
-        	InputStream is1 = getClass().getClassLoader().getResourceAsStream(FILENAME);
-        	v = (Vector<?>) SerializationHelper.read(is1);
-        	is1.close();
-	} else {
-	    // read custom model from file system
-	    v = (Vector<?>) SerializationHelper.read(modelpath);
-	    IJ.log("load classifier from " + modelpath);
-	}
-	Classifier cl = (Classifier) v.get(0);
-	Instances header = (Instances) v.get(1);
-	
-
-	// output predictions
-	for (int i1 = 0; i1 < data.numInstances(); i1++) {
-	    Instance curr = data.instance(i1);
-	    // create an instance for the classifier that fits the training data
-	    // Instances object returned here might differ slightly from the one
-	    // used during training the classifier, e.g., different order of
-	    // nominal values, different number of attributes.
-	    Instance inst = new DenseInstance(header.numAttributes());
-	    inst.setDataset(header);
-	    for (int n = 0; n < header.numAttributes(); n++) {
-		Attribute att = data.attribute(header.attribute(n).name());
-		// original attribute is also present in the current dataset
-		if (att != null) {
-		    if (att.isNominal()) {
-			// is this label also in the original data?
-			// Note:
-			// "numValues() > 0" is only used to avoid problems with nominal 
-			// attributes that have 0 labels, which can easily happen with
-			// data loaded from a database
-			if ((header.attribute(n).numValues() > 0) && (att.numValues() > 0)) {
-			    String label = curr.stringValue(att);
-			    int index = header.attribute(n).indexOfValue(label);
-			    if (index != -1)
-				inst.setValue(n, index);
-			}
-		    }
-		    else if (att.isNumeric()) {
-			inst.setValue(n, curr.value(att));
-		    }
-		    else {
-			throw new IllegalStateException("Unhandled attribute type! " + att.toString());
-		    }
+	    try {
+		propabilities = this.classifier.distributionForInstance(inst);
+		IJ.log("\tPropabilities:");
+		for (int a = 0; a < propabilities.length; a++) {
+		    if (propabilities[a] != 0)
+			IJ.log("\t\t" + inst.classAttribute().value(a) + ": " + propabilities[a]);
 		}
+	    } catch (Exception e) {
+		// no handling needed
+		e.printStackTrace();
 	    }
-
-	    // predict class
-	    double pred = cl.classifyInstance(inst);
-	    cls = inst.classAttribute().value((int) pred);
-	    //System.out.println(inst.classValue() + " -> " + pred + " (" + cls + ")");
-
-	    //System.out.print("ID: " + inst.value(0));
-	    System.out.print(", actual: " + header.classAttribute().value((int) inst.classValue()));	// TODO: fix problem with incompatible headers -> IndexOutOfBoundsException after custom call
-	    System.out.println(", predicted: " + inst.classAttribute().value((int) pred));
-	    
-	    
-	    // get probabilities
-	    // http://stackoverflow.com/questions/31405503/weka-how-to-use-classifier-in-java
-	    double[] propabilities = cl.distributionForInstance(inst);
-	    System.out.println("Propabilities:");
-	    for (int a = 0; a < propabilities.length; a++) {
-		if (propabilities[a] != 0)
-		    System.out.println(inst.classAttribute().value(a) + ": " + propabilities[a]);
-	    }
-
 	}
 
-	System.out.println("Predicting finished!");
+	IJ.log("Predicting finished!");
 	return cls;
     }
 
-    public Instances buildInstances(ResultsTable rttmp) {
+    public static Instances buildInstances(ResultsTable rttmp) {
 	ArrayList<Attribute>      atts;
 	ArrayList<String>      attVals = new ArrayList<String>();
 	Instances       data;
@@ -268,6 +261,21 @@ public class LeafClassifier {
 	}
 
 	return data;
+    }
+
+    public void saveModel(String modelpath) {
+	// save model + header
+	Vector<Object> v = new Vector<Object>();
+	v.add(this.classifier);
+	v.add(this.header);
+	try {
+	    SerializationHelper.write(modelpath, v);
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    throw new UnsupportedOperationException("Classifier model could not be saved.");
+	}
+
+	IJ.log("\tWrote classifier to " + modelpath);
     }
 
 }

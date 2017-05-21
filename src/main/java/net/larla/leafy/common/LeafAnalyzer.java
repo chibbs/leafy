@@ -10,8 +10,18 @@ import ij.plugin.filter.Analyzer;
 import net.larla.leafy.datamodel.*;
 
 public class LeafAnalyzer {
-
-    public void analyze(Leaf leaf) {
+    
+    public Leaf analyze(ImagePlus imp, ImagePlus mask, String groundTruth) {
+	
+	Leaf currentleaf = new Leaf(imp, imp.getShortTitle(), groundTruth, mask.getRoi(), mask);
+	runAnalyzer(currentleaf);
+	calcCCD(currentleaf);
+	fillResultsTable(currentleaf);
+	
+	return currentleaf;
+    }
+    
+    public void runAnalyzer(Leaf leaf) {
 	ResultsTable rt_temp = new ResultsTable();
 	double area, convexlength, perim, majoraxis, minoraxis, ellipsarea;
 

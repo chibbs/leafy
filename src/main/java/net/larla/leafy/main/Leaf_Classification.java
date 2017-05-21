@@ -12,7 +12,6 @@ import net.larla.leafy.common.LeafAnalyzer;
 import net.larla.leafy.common.LeafClassifier;
 import net.larla.leafy.common.LeafPreprocessor;
 import net.larla.leafy.datamodel.Leaf;
-import weka.core.Instances;
 
 public class Leaf_Classification implements PlugInFilter {
 
@@ -38,19 +37,15 @@ public class Leaf_Classification implements PlugInFilter {
 	Roi roi_leaf = imp_bin.getRoi();
 	this.imp.setRoi(roi_leaf, true);
 
-	Leaf currentleaf = new Leaf(this.imp, this.imp.getShortTitle(), "?", roi_leaf, imp_bin);
-
-	LeafAnalyzer la = new LeafAnalyzer();	// TODO: Options übergeben
-	la.analyze(currentleaf);
-	la.calcCCD(currentleaf);
-	la.fillResultsTable(currentleaf);
-	//ResultsTable.getResultsTable().show("Results");
-	LeafClassifier lc = new LeafClassifier();
-	Instances inst = lc.buildInstances(ResultsTable.getResultsTable());
+	Leaf currentleaf = new LeafAnalyzer().analyze(imp, imp_bin, "?");
+	
+	ResultsTable.getResultsTable().show("Results");
+	LeafClassifier lc = new LeafClassifier(this.modelpath);
+	//Instances inst = lc.buildInstances(ResultsTable.getResultsTable());
 	String cls = "";
 
 	try {
-	    cls = lc.predictSingle(inst, this.modelpath);
+	    cls = lc.predictSingle(currentleaf);
 	} catch (Exception e) {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
@@ -94,7 +89,7 @@ public class Leaf_Classification implements PlugInFilter {
 	image.show();
 
 	// run the plugin
-	IJ.runPlugIn(clazz.getName(), "custom");
+	IJ.runPlugIn(clazz.getName(), "");
 	//IJ.runPlugIn("Leaf_Classification", "");
 
     }
