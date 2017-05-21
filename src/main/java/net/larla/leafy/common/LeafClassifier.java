@@ -7,6 +7,7 @@ import weka.core.converters.ConverterUtils.DataSource;
 import java.io.InputStream;
 import java.util.*;
 
+import ij.IJ;
 import ij.measure.ResultsTable;
 
 public class LeafClassifier {
@@ -116,12 +117,14 @@ public class LeafClassifier {
 	// read model and header
 	if (modelpath == "") {
 	    // read default model from jar
+	    IJ.log("load default classifier");
         	InputStream is1 = getClass().getClassLoader().getResourceAsStream(FILENAME);
         	v = (Vector<?>) SerializationHelper.read(is1);
         	is1.close();
 	} else {
 	    // read custom model from file system
 	    v = (Vector<?>) SerializationHelper.read(modelpath);
+	    IJ.log("load classifier from " + modelpath);
 	}
 	Classifier cl = (Classifier) v.get(0);
 	Instances header = (Instances) v.get(1);
@@ -168,7 +171,7 @@ public class LeafClassifier {
 	    //System.out.println(inst.classValue() + " -> " + pred + " (" + cls + ")");
 
 	    //System.out.print("ID: " + inst.value(0));
-	    System.out.print(", actual: " + data.classAttribute().value((int) inst.classValue()));	// TODO: fix problem with incompatible headers
+	    System.out.print(", actual: " + header.classAttribute().value((int) inst.classValue()));	// TODO: fix problem with incompatible headers -> IndexOutOfBoundsException after custom call
 	    System.out.println(", predicted: " + inst.classAttribute().value((int) pred));
 	    
 	    
