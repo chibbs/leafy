@@ -22,10 +22,9 @@ public class LeafClassifierTest {
 	rt_test.addValue( "Heading1", 0.1d );
 	rt_test.addValue( "Heading2", 0.5786574839);
 
-	LeafClassifier lc = new LeafClassifier();
 	// build Instances
 	try {
-	    inst = lc.buildInstances(rt_test);
+	    inst = LeafClassifier.buildInstances(rt_test);
 	} catch (Exception e) {
 	    System.out.println(e);
 	}
@@ -44,10 +43,9 @@ public class LeafClassifierTest {
 	rt_test.addValue( "Heading1", 0.1d );
 	rt_test.addValue( "Heading2", 0.5786574839);
 
-	LeafClassifier lc = new LeafClassifier();
 	// build Instances
 	try {
-	    inst = lc.buildInstances(rt_test);
+	    inst = LeafClassifier.buildInstances(rt_test);
 	    Assert.assertTrue(inst.classIndex() == 0);
 	} catch (Exception e) {
 	    System.out.println(e);
@@ -72,10 +70,9 @@ public class LeafClassifierTest {
 	rt_test.addValue( "Heading1", 56 );
 	rt_test.addValue( "Heading2", 0);
 
-	LeafClassifier lc = new LeafClassifier();
 	// build Instances
 	try {
-	    inst = lc.buildInstances(rt_test);
+	    inst = LeafClassifier.buildInstances(rt_test);
 	    Assert.assertTrue(inst.classIndex() == 0);
 	} catch (Exception e) {
 	    System.out.println(e);
@@ -100,10 +97,9 @@ public class LeafClassifierTest {
 	rt_test.addValue( "Heading1", 56 );
 	rt_test.addValue( "Heading2", 0);
 
-	LeafClassifier lc = new LeafClassifier();
 	// build Instances
 	try {
-	    inst = lc.buildInstances(rt_test);
+	    inst = LeafClassifier.buildInstances(rt_test);
 
 	} catch (Exception e) {
 	    System.out.println(e);
@@ -127,10 +123,9 @@ public class LeafClassifierTest {
 	rt_test.addValue( "Class", "c2" );
 	rt_test.addValue( "Heading1", 56 );
 
-	LeafClassifier lc = new LeafClassifier();
 	// build Instances
 	try {
-	    inst = lc.buildInstances(rt_test);
+	    inst = LeafClassifier.buildInstances(rt_test);
 	} catch (Exception e) {
 	    System.out.println(e);
 	}
@@ -152,10 +147,9 @@ public class LeafClassifierTest {
 	rt_test.addValue( "Heading1", 56 );
 	rt_test.addValue( "Heading2", 0);
 
-	LeafClassifier lc = new LeafClassifier();
 	// build Instances
 	try {
-	    inst = lc.buildInstances(rt_test);
+	    inst = LeafClassifier.buildInstances(rt_test);
 	} catch (Exception e) {
 	    System.out.println(e);
 	}
