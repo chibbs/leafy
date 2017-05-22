@@ -3,8 +3,16 @@ package net.larla.leafy.common;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Vector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ij.IJ;
 import ij.measure.ResultsTable;
@@ -24,6 +32,7 @@ public class LeafClassifier {
     public final static String FILENAME = "model/j48default.model";
     private Classifier classifier;
     private Instances header;
+    private Instance testInst;
 
     public LeafClassifier(Classifier classifier, Instances header) {
 	super();
@@ -124,8 +133,8 @@ public class LeafClassifier {
 	    // Instances object returned here might differ slightly from the one
 	    // used during training the classifier, e.g., different order of
 	    // nominal values, different number of attributes.
-	    Instance inst = new DenseInstance(this.header.numAttributes());
-	    inst.setDataset(this.header);
+	    testInst = new DenseInstance(this.header.numAttributes());
+	    testInst.setDataset(this.header);
 	    for (int n = 0; n < this.header.numAttributes(); n++) {
 		Attribute att = data.attribute(this.header.attribute(n).name());
 		// original attribute is also present in the current dataset
@@ -140,11 +149,11 @@ public class LeafClassifier {
 			    String label = curr.stringValue(att);
 			    int index = this.header.attribute(n).indexOfValue(label);
 			    if (index != -1)
-				inst.setValue(n, index);
+				testInst.setValue(n, index);
 			}
 		    }
 		    else if (att.isNumeric()) {
-			inst.setValue(n, curr.value(att));
+			testInst.setValue(n, curr.value(att));
 		    }
 		    else {
 			throw new IllegalStateException("Unhandled attribute type! " + att.toString());
@@ -154,35 +163,47 @@ public class LeafClassifier {
 
 	    // predict class
 	    try {
-		pred = this.classifier.classifyInstance(inst);
+		pred = this.classifier.classifyInstance(testInst);
 	    } catch (Exception e) {
 		e.printStackTrace();
 		throw new UnsupportedOperationException("Classification not possible");
 	    }
 	    cls = this.header.classAttribute().value((int) pred);
-	    actclassnum = inst.classValue();
+	    actclassnum = testInst.classValue();
 	    if (Double.isNaN(actclassnum))
 		actclassnum = -1;
 	    IJ.log("actual: " + actclass + " (" + (int)actclassnum + "), predicted: " + cls + " (" + (int)pred + ")");
 
-
-	    // get probabilities
-	    // http://stackoverflow.com/questions/31405503/weka-how-to-use-classifier-in-java
-	    try {
-		propabilities = this.classifier.distributionForInstance(inst);
-		IJ.log("\tPropabilities:");
-		for (int a = 0; a < propabilities.length; a++) {
-		    if (propabilities[a] != 0)
-			IJ.log("\t\t" + inst.classAttribute().value(a) + ": " + propabilities[a]);
-		}
-	    } catch (Exception e) {
-		// no handling needed
-		e.printStackTrace();
-	    }
 	}
 
 	IJ.log("Predicting finished!");
 	return cls;
+    }
+    
+    public ArrayList<?> getProp(int count) {
+	// get probabilities
+	double propabilities[];
+	ArrayList<?> topMatches = new ArrayList<Object>();
+	    // TODO: auslagern in Methode
+	    // http://stackoverflow.com/questions/31405503/weka-how-to-use-classifier-in-java
+	    try {
+		propabilities = this.classifier.distributionForInstance(testInst);
+		IJ.log("Propabilities:");
+		HashMap<String, Double> poss = new HashMap<String, Double>();
+		for (int a = 0; a < propabilities.length; a++) {
+		    if (propabilities[a] != 0) {
+			//IJ.log("\t\t" + inst.classAttribute().value(a) + ": " + propabilities[a]);
+			poss.put(testInst.classAttribute().value(a), propabilities[a]);	// TODO: kürzen auf 2 Nachkommastellen
+		    }
+		}
+		Stream<Map.Entry<String,Double>> sorted = poss.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue()));
+		topMatches = (ArrayList<?>) sorted.collect(Collectors.toList());
+		
+	    } catch (Exception e) {
+		// no handling needed
+		e.printStackTrace();
+	    }
+	    return topMatches;
     }
 
     public static Instances buildInstances(ResultsTable rttmp) {

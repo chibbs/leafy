@@ -39,13 +39,14 @@ public class Leaf_Classification implements PlugInFilter {
 
 	Leaf currentleaf = new LeafAnalyzer().analyze(imp, imp_bin, "?");
 	
-	ResultsTable.getResultsTable().show("Results");
+	//ResultsTable.getResultsTable().show("Results");
 	LeafClassifier lc = new LeafClassifier(this.modelpath);
 	//Instances inst = lc.buildInstances(ResultsTable.getResultsTable());
 	String cls = "";
 
 	try {
 	    cls = lc.predictSingle(currentleaf);
+	    IJ.log(lc.getProp(5).toString());
 	} catch (Exception e) {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
