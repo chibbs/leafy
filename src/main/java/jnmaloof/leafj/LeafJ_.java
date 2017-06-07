@@ -110,8 +110,10 @@ public class LeafJ_ implements PlugInFilter {
 				timp.updateAndDraw();
 				IJ.showMessage("end find Petiole");
 			}
-			leaves[leafCurrent].addPetioleToManager(timp, tip, rm, i);
-			leaves[leafCurrent].addBladeToManager(timp, tip, rm, i);
+			//leaves[leafCurrent].addPetioleToManager(timp, tip, rm, i);
+			rm.add(timp, leaves[leafCurrent].getPetioleROI(timp, tip), i);
+			//leaves[leafCurrent].addBladeToManager(timp, tip, rm, i);
+			rm.add(timp, leaves[leafCurrent].getBladeROI(timp, tip), i);
 		
 		}//for leafCurrent
 		//timp = WindowManager.getCurrentImage();

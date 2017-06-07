@@ -63,7 +63,7 @@ public class leaf {
 		//Note: Angle of 0 = "3 O'clock"
 		A = Math.toRadians(angle); //Angle of leaf from horizontal
 		wide = (angle < 45 || angle > 135); //true if leaf is more horizontally oriented
-		right = (angle < 90); //true if leaf is leaning to right
+		right = (angle <= 90); //true if leaf is leaning to right		// changed by L. Woelbeling 6.6.2017 due to error if angle == 90
 		if (wide) {
 			arrayLength = (int) (width + Math.abs(Math.tan(A)*height));
 			if (verbose > 0) IJ.log("wide: widths array extent = " + IJ.d2s(width + Math.abs(Math.tan(A)*height)));
@@ -325,8 +325,9 @@ public class leaf {
 		}
 	}
 	
-	public void addBladeToManager(ImagePlus imp, ImageProcessor ip, RoiManager rm,int leaf) {
-		if (verbose > 0) IJ.log("starting find blade");
+	public PolygonRoi getBladeROI( ImagePlus imp, ImageProcessor ip ) {
+	    PolygonRoi bladeROI = null;
+	    if (verbose > 0) IJ.log("starting find blade");
 		//method to find the blade
 		//one approach is to use the wand, using pixels just on the far
 		//side of the petiole as a starting point.
@@ -359,17 +360,17 @@ public class leaf {
 				(int) leafCenter_y[Math.min(top+10,leafCenter_y.length-1)],
 				ip.getMinThreshold(),
 				ip.getMaxThreshold()*.9,
-				Wand.FOUR_CONNECTED);
+				Wand.EIGHT_CONNECTED);		// L.Woelbeling 6.6.2017
 		if (w.npoints > 0) {
-			PolygonRoi bladeROI = new PolygonRoi(w.xpoints,w.ypoints,w.npoints,Roi.POLYGON);
+			bladeROI = new PolygonRoi(w.xpoints,w.ypoints,w.npoints,Roi.POLYGON);
 			bladeROI.setName("Blade");
-			rm.add(imp,bladeROI,leaf);//need to change leaf number handling
-			//rm.select(leaf*2+1);
-			//rm.runCommand("Rename", String.valueOf(leaf*2 + 2) + ": Blade " + String.valueOf(leaf+1));
-		}if (verbose > 0) IJ.log("end find blade");
+		}
+		if (verbose > 0) IJ.log("end find blade");
+		
+		return bladeROI;
 	}
 		
-public void addPetioleToManager(ImagePlus imp, ImageProcessor ip, RoiManager rm,int leaf){
+public PolygonRoi getPetioleROI(ImagePlus imp, ImageProcessor ip){
 	//a new attempt at addToManager
 	//goal is to have a linear ROI for the petiole defined and added to the manager
 	//strategy is to use the information from width center to define the petiole and ROI
@@ -393,10 +394,8 @@ public void addPetioleToManager(ImagePlus imp, ImageProcessor ip, RoiManager rm,
 	PolygonRoi petioleROI = new PolygonRoi(roi_x, roi_y, nPoints,Roi.POLYLINE);
 //	PolygonRoi petioleROI = new PolygonRoi(petiole_x, petiole_y, petiole_x.length,Roi.POLYLINE);
 	petioleROI.setName("Petiole");
-	rm.add(imp, petioleROI, leaf);
-	//rm.select(leaf*2);
-	//rm.runCommand("Rename", String.valueOf(leaf*2 + 1) + ": Petiole " + String.valueOf(leaf+1));
 	if (verbose > 0) IJ.log("end addToManager");
+	return petioleROI;
 }
 
 /*private int[] addArray(int[] a, int[]b) {

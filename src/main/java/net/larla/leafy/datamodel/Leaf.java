@@ -9,6 +9,9 @@ public class Leaf {
     private ImagePlus mask;
     private Roi contour;
     private Roi hullroi;
+    private Roi bbroi;
+    private Roi petioleroi;
+    private Roi bladeroi;
     private Roi ellipseroi;
     private RadialDistances ccd;
     private double circularity;
@@ -26,6 +29,31 @@ public class Leaf {
     private double haralick2;
     private double centroidX;
     private double centroidY;
+    private double petioleratio;
+
+    public Roi getBbroi() {
+        return bbroi;
+    }
+
+    public void setBbroi(Roi bbroi) {
+        this.bbroi = bbroi;
+    }
+
+    public Roi getPetioleroi() {
+        return petioleroi;
+    }
+
+    public void setPetioleroi(Roi petioleroi) {
+        this.petioleroi = petioleroi;
+    }
+
+    public double getPetioleratio() {
+        return petioleratio;
+    }
+
+    public void setPetioleratio(double petioleratio) {
+        this.petioleratio = petioleratio;
+    }
 
     public Leaf(ImagePlus img, String title, String leafclass) {
 	this.img = img;
@@ -222,6 +250,14 @@ public class Leaf {
 
     public void setCentroidY(double centroidY) {
 	this.centroidY = centroidY;
+    }
+    
+    public Roi getBladeroi() {
+        return bladeroi;
+    }
+
+    public void setBladeroi(Roi bladeroi) {
+        this.bladeroi = bladeroi;
     }
 
 }

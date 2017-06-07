@@ -24,6 +24,8 @@ public class LeafAnalyzer {
 	Leaf currentleaf = new Leaf(imp, imp.getShortTitle(), groundTruth, mask.getRoi(), mask);
 	runAnalyzer(currentleaf);
 	calcCCD(currentleaf);
+	// find petiole
+	findPetiole(currentleaf);
 	fillResultsTable(currentleaf);
 
 	return currentleaf;
@@ -88,9 +90,6 @@ public class LeafAnalyzer {
 	// use centroid as center point (average x and y of all pixels in region (center of mass requires grayscale pic)
 	leaf.setCentroidX(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("X"), 0));
 	leaf.setCentroidY(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Y"), 0));
-	
-	// find petiole
-	rt_temp = findPetiole(leaf, rt_temp);
 
 	// Rauhigkeit = Umfang / Umfang der konv. Hülle
 	Roi roi = imp.getRoi();	
@@ -253,7 +252,7 @@ public class LeafAnalyzer {
 	impp.show();
     }
 
-    public ResultsTable findPetiole(Leaf leaf, ResultsTable rt_temp) {
+    public void findPetiole(Leaf leaf) {
 	// copied from LeafJ
 	//IJ.log( "start find petiole" );
 	
@@ -261,7 +260,7 @@ public class LeafAnalyzer {
 	RoiManager rm = RoiManager.getInstance();
 	if (rm == null)
 	    rm = new RoiManager();
-	ResultsTable rt_res = new ResultsTable();
+	ResultsTable rt_temp = new ResultsTable();
 
 	ImagePlus imp = leaf.getMask();
 	//imp.show();
@@ -269,12 +268,20 @@ public class LeafAnalyzer {
 	ImageProcessor tip = imp.getProcessor();
 	WindowManager.setTempCurrentImage(imp);
 	
-	
+	Roi roi = imp.getRoi();	
+	Rectangle bb = roi.getBounds();
+	Roi bbroi = new Roi(bb);
+	leaf.setBbroi(bbroi);
+	imp.killRoi();
+	imp.setRoi( bbroi, true );
+	Analyzer an = new Analyzer(imp, Measurements.RECT + Measurements.ELLIPSE + Measurements.LABELS, rt_temp);
+	an.measure();
+	double angle = rt_temp.getValue("Angle",rt_temp.getCounter()-1);
+	IJ.log("Angle: " + angle);
+	imp.killRoi();
+	imp.setRoi(roi);
 
 	tip.setThreshold(0, 128, 3);
-	//tip.setAutoThreshold(ImageProcessor.ISODATA, ImageProcessor.OVER_UNDER_LUT );
-	//tip.setAutoThreshold("Moments", false, ImageProcessor.OVER_UNDER_LUT );
-	//WindowManager.setTempCurrentImage(imp);
 
 
 	leaf leafCurrent = new leaf();
@@ -283,17 +290,40 @@ public class LeafAnalyzer {
 	leafCurrent.findPetiole(tip);           //
 
 	//timp.updateAndDraw();
-	IJ.log("end find Petiole");
-	leafCurrent.addPetioleToManager(imp, tip, rm, 4);
-	leafCurrent.addBladeToManager(imp, tip, rm, 5);
+	//IJ.log("end find Petiole");
+	PolygonRoi bladeRoi = leafCurrent.getBladeROI(imp, tip);
+	PolygonRoi petioleRoi = leafCurrent.getPetioleROI(imp, tip);
+	imp.setRoi(petioleRoi);
 
 	ResultsTable rt_temp1 = new ResultsTable();
 	Analyzer petioleAnalyzer = new Analyzer(imp,  Measurements.PERIMETER , rt_temp1);
 	petioleAnalyzer.measure();
+	double petiolelength = rt_temp1.getValue("Perim.",rt_temp1.getCounter()-1);
 	
-	rt_temp.addValue( "Petiole Length", rt_temp1.getValue("Perim.",rt_temp1.getCounter()-1) );
+	rm.add(imp, bladeRoi, 5);
+	rm.add(imp, petioleRoi, 4);
+	leaf.setBladeroi(bladeRoi);
+	leaf.setPetioleroi(petioleRoi);
+	
+	imp.setRoi(roi);
+	roi.setName("Leaf");
+	rm.add(imp, roi, 6);
+	ResultsTable rt_temp2 = new ResultsTable();
+	Analyzer leafAnalyzer = new Analyzer(imp,  Measurements.FERET , rt_temp2);
+	leafAnalyzer.measure();
+	double leafHeight = rt_temp2.getValue("Feret",rt_temp2.getCounter()-1);
+	double feretAngle = rt_temp2.getValue("FeretAngle",rt_temp2.getCounter()-1);
+	IJ.log("FeretAngle: " + feretAngle);
+	
+	double petioleratio = petiolelength / leafHeight;
+	IJ.log("Leaf height: " + leafHeight);
+	IJ.log("petiole length: " + petiolelength);
+	leaf.setPetioleratio(petioleratio);
+	IJ.log("PetioleRatio: " + petioleratio);
+	
+	//rt_temp.addValue( "Petiole Length", rt_temp1.getValue("Perim.",rt_temp1.getCounter()-1) );
 
-	return rt_temp;
+	//rt_temp.show("Results");
 
 	//timp.close();
     }
