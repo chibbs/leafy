@@ -81,8 +81,8 @@ public class Leaf_Classification implements PlugInFilter {
 	new ImageJ();
 
 	// open sample
-	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_platanoides_42_MEW2014.png");
-	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Quercus_petraea_16_MEW2014.png");
+	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_platanoides_42_MEW2014.png");
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Quercus_petraea_16_MEW2014.png");
 	image.show();
 
 	// run the plugin

@@ -60,6 +60,7 @@ public class leaf {
 		ROI_bottom = ROI_top + height;
 		ROI_right = ROI_left + width;
 		angle = rt.getValue("Angle",row);
+		//angle = rt.getValue("FeretAngle",row);
 		//Note: Angle of 0 = "3 O'clock"
 		A = Math.toRadians(angle); //Angle of leaf from horizontal
 		wide = (angle < 45 || angle > 135); //true if leaf is more horizontally oriented

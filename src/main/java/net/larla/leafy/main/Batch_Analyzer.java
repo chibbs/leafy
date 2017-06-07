@@ -89,7 +89,6 @@ public class Batch_Analyzer implements PlugIn {
 		    la.runAnalyzer(currentleaf);
 		    la.calcCCD(currentleaf);
 		    la.saveCCDplot(currentleaf, dir1, img.getShortTitle());
-		    la.findLeafAxis(currentleaf, dir1, img.getShortTitle());
 		    la.fillResultsTable(currentleaf);
 
 		}

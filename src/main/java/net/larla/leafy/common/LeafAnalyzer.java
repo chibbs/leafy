@@ -3,15 +3,10 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Point;
 import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import ij.*;
 import ij.gui.*;
 import ij.measure.*;
 import ij.plugin.filter.Analyzer;
-import ij.plugin.filter.ParticleAnalyzer;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 import jnmaloof.leafj.leaf;
@@ -24,7 +19,7 @@ public class LeafAnalyzer {
 	Leaf currentleaf = new Leaf(imp, imp.getShortTitle(), groundTruth, mask.getRoi(), mask);
 	runAnalyzer(currentleaf);
 	calcCCD(currentleaf);
-	// find petiole
+	findLeafAxis(currentleaf);
 	findPetiole(currentleaf);
 	fillResultsTable(currentleaf);
 
@@ -224,32 +219,33 @@ public class LeafAnalyzer {
 	IJ.save( dir + "ccd/" + filename + "-ccd.png" );
     }
 
-    public void findLeafAxis(Leaf leaf, String dir, String filename) {
-	RadialDistances rd = leaf.getCcd();
-	double maxvalue = rd.getMaxdist();
-	double threshold = rd.getMeandist();
-	double[] points = rd.getCcd();
-	double[] nms = new double[points.length];
-	int section = points.length / 6;
-	int index;
-
-	for (int i = 0; i < points.length; i++) {
-	    if (points[i] > threshold) {
-		for (int j = i - section; j < i + section; j++) {
-		    index = j < 0 ? points.length + j : j;	// negativer Überlauf
-		    index = index >= points.length ? index - points.length : index;	// positiver Überlauf
-		    if (points[index] > 0 && points[index] <= points[i]) {
-			points[index] = 0d;
-
-		    }
-		}
-	    }
+    public void findLeafAxis(Leaf leaf) {
+	ImagePlus imp = leaf.getMask();
+	Roi roi = leaf.getContour();
+	
+	imp.setRoi(roi);
+	roi.setName("Leaf");
+	ResultsTable rt_temp2 = new ResultsTable();
+	Analyzer leafAnalyzer = new Analyzer(imp,  Measurements.FERET , rt_temp2);
+	leafAnalyzer.measure();
+	double leafHeight = rt_temp2.getValue("Feret",rt_temp2.getCounter()-1);
+	double feretAngle = rt_temp2.getValue("FeretAngle",rt_temp2.getCounter()-1);
+	double feretX = rt_temp2.getValue("FeretX",rt_temp2.getCounter()-1);
+	double feretY = rt_temp2.getValue("FeretY",rt_temp2.getCounter()-1);
+	double feretAngleRad = Math.toRadians(feretAngle);
+	double x2 = 0;
+	double y2 = 0;
+	
+	if (feretAngle <= 90) {
+	    x2 = feretX + leafHeight * Math.cos(feretAngleRad);
+	    y2 = feretY - leafHeight * Math.sin(feretAngleRad);
+	} else {
+	    x2 = feretX + leafHeight * Math.cos(Math.PI - feretAngleRad);
+	    y2 = feretY + leafHeight * Math.sin(feretAngleRad);
 	}
-	ImagePlus impp = getCCDplot(points, maxvalue);
-	//WindowManager.setTempCurrentImage(impp);
-	// TODO: make directory, if not exist
-	//IJ.save( dir + "ccd/" + filename + "-ccdmax.png" );
-	impp.show();
+	Roi ln = new Line(feretX, feretY, x2, y2);
+	ln.setName("LeafAxis");
+	leaf.setLeafaxis(ln);
     }
 
     public void findPetiole(Leaf leaf) {
@@ -268,13 +264,15 @@ public class LeafAnalyzer {
 	ImageProcessor tip = imp.getProcessor();
 	WindowManager.setTempCurrentImage(imp);
 	
-	Roi roi = imp.getRoi();	
-	Rectangle bb = roi.getBounds();
-	Roi bbroi = new Roi(bb);
-	leaf.setBbroi(bbroi);
+	Roi roi = imp.getRoi();
+	PolygonRoi convexhull = (PolygonRoi) leaf.getHullroi();
+	if (convexhull == null) {
+	    Polygon hull = roi.getConvexHull();
+	    PolygonRoi roi_hull = new PolygonRoi(hull, Roi.TRACED_ROI);
+	}
 	imp.killRoi();
-	imp.setRoi( bbroi, true );
-	Analyzer an = new Analyzer(imp, Measurements.RECT + Measurements.ELLIPSE + Measurements.LABELS, rt_temp);
+	imp.setRoi( convexhull, false );
+	Analyzer an = new Analyzer(imp, Measurements.RECT + Measurements.ELLIPSE + Measurements.FERET + Measurements.LABELS, rt_temp);
 	an.measure();
 	double angle = rt_temp.getValue("Angle",rt_temp.getCounter()-1);
 	IJ.log("Angle: " + angle);
@@ -312,14 +310,11 @@ public class LeafAnalyzer {
 	Analyzer leafAnalyzer = new Analyzer(imp,  Measurements.FERET , rt_temp2);
 	leafAnalyzer.measure();
 	double leafHeight = rt_temp2.getValue("Feret",rt_temp2.getCounter()-1);
-	double feretAngle = rt_temp2.getValue("FeretAngle",rt_temp2.getCounter()-1);
-	IJ.log("FeretAngle: " + feretAngle);
+
+	rm.add(imp, leaf.getLeafaxis(), 7);
 	
 	double petioleratio = petiolelength / leafHeight;
-	IJ.log("Leaf height: " + leafHeight);
-	IJ.log("petiole length: " + petiolelength);
 	leaf.setPetioleratio(petioleratio);
-	IJ.log("PetioleRatio: " + petioleratio);
 	
 	//rt_temp.addValue( "Petiole Length", rt_temp1.getValue("Perim.",rt_temp1.getCounter()-1) );
 
