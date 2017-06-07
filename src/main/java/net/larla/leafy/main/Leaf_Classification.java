@@ -38,6 +38,7 @@ public class Leaf_Classification implements PlugInFilter {
 	this.imp.setRoi(roi_leaf, true);
 
 	Leaf currentleaf = new LeafAnalyzer().analyze(imp, imp_bin, "?");
+	new LeafAnalyzer().findLeafAxis(currentleaf, "", "test");
 	
 	//ResultsTable.getResultsTable().show("Results");
 	LeafClassifier lc = new LeafClassifier(this.modelpath);
@@ -86,7 +87,7 @@ public class Leaf_Classification implements PlugInFilter {
 	// IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/acer_platanoides/Acer_platanoides_3_MEW2014.png");
 	// ImagePlus image =
 	// IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/quercus_petraea/Quercus_petraea_13_MEW2014.png");
-	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder2/Betula_pubescens_16_MEW2014.png");
+	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_pseudoplatanus_38_MEW2014.png");
 	image.show();
 
 	// run the plugin

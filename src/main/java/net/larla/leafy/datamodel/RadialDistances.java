@@ -2,8 +2,8 @@ package net.larla.leafy.datamodel;
 import java.util.ArrayList;
 
 public class RadialDistances {
-    ArrayList<Double> ccd;
-    ArrayList<Double> normccd;
+    double[] ccd;
+    double[] normccd;
     private double maxdist;
     private double meandist;
     private double variance;
@@ -12,14 +12,14 @@ public class RadialDistances {
     private double normsdev;
 
 
-    public RadialDistances(ArrayList<Double> ccd) {
+    public RadialDistances(double[] ccd) {
 	super();
 	this.ccd = ccd;
     }
       
 
-    public RadialDistances(ArrayList<Double> ccd, double maxdist, double meandist,
-	    double variance, double sdev, ArrayList<Double> normccd, double normmean, double normsdev) {
+    public RadialDistances(double[] ccd, double maxdist, double meandist,
+	    double variance, double sdev, double[] normccd, double normmean, double normsdev) {
 	super();
 	this.ccd = ccd;
 	this.normccd = normccd;
@@ -30,10 +30,10 @@ public class RadialDistances {
 	this.normmean = normmean;
 	this.normsdev = normsdev;
     }
-    public ArrayList<Double> getCcd() {
+    public double[] getCcd() {
 	return this.ccd;
     }
-    public ArrayList<Double> getNormccd() {
+    public double[] getNormccd() {
 	return this.normccd;
     }
     public double getMaxdist() {
@@ -52,21 +52,24 @@ public class RadialDistances {
 	double normd;
 	this.normmean = 0;
 	double normvar = 0;
-	this.normccd = new ArrayList<Double>();
-
-	for (double d : this.ccd)
-	    this.maxdist = this.maxdist < d ? d : this.maxdist;
+	this.normccd = new double[this.ccd.length];
 
 	for (double d : this.ccd) {
-	    normd = d / this.maxdist;
-	    this.normccd.add(normd);
+	    if (this.maxdist < d) {
+		this.maxdist =  d;
+	    }
+	}
+
+	for (int i = 0; i < this.ccd.length; i++) {
+	    normd = this.ccd[i] / this.maxdist;
+	    this.normccd[i] = (normd);
 	    this.normmean += normd;
 	}
-	this.normmean /= this.normccd.size();
+	this.normmean /= this.normccd.length;
 
 	for (double nd : this.normccd)
 	    normvar = normvar + Math.pow(nd - normvar, 2);
-	normvar /= this.normccd.size();
+	normvar /= this.normccd.length;
 	this.normsdev = Math.sqrt( normvar );
     }
     public double getNormMean() {
@@ -75,7 +78,5 @@ public class RadialDistances {
     public double getNormSdev() {
 	return normsdev;
     }
-
-
 
 }

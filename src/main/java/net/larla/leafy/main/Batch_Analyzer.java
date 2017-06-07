@@ -1,8 +1,14 @@
 package net.larla.leafy.main;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -28,6 +34,23 @@ public class Batch_Analyzer implements PlugIn {
 	    return;
 	String dir3 = dir1 + "leaf.arff";
 	File f = new File(dir3);
+	HashMap<String,String> classmap = new HashMap<String, String>();
+
+	try{
+	    File toRead=new File(dir1+"classes.txt");
+	    FileInputStream fis=new FileInputStream(toRead);
+	    ObjectInputStream ois=new ObjectInputStream(fis);
+
+	    classmap = (HashMap<String,String>)ois.readObject();
+
+	    ois.close();
+	    fis.close();
+	    //print All data in MAP
+	    for(Map.Entry<String,String> m :classmap.entrySet()){
+		System.out.println(m.getKey()+" : "+m.getValue());
+	    }
+	}catch(Exception e){}
+
 	if(!f.exists() || f.isDirectory()) {  // TODO: Teste ob arff-Datei schon existiert
 	    String[] list = new File(dir1).list();
 	    if (list==null) return;
@@ -40,10 +63,16 @@ public class Batch_Analyzer implements PlugIn {
 		    ImagePlus img = IJ.openImage(dir1+list[i]);
 		    if (img==null) continue;
 
-		    if (list[i].contains( "_")) {
-			groundTruth = list[i].split( "_" )[0] + " " + list[i].split( "_" )[1];
+		    if (classmap.containsKey(list[i])) {
+			groundTruth = classmap.get(list[i]);
 		    } else {
-			groundTruth = "";
+			if (list[i].contains( "_")) {
+			    //groundTruth = list[i].split( "_" )[0] + " " + list[i].split( "_" )[1];	// Klasse = Gattung und Art
+			    groundTruth = list[i].split( "_" )[0];					// Klasse = Gattung
+			    classmap.put(list[i], groundTruth);
+			} else {
+			    groundTruth = "";
+			}  
 		    }
 
 		    WindowManager.setTempCurrentImage(img);     // needed because image is not shown (no images open)
@@ -59,6 +88,8 @@ public class Batch_Analyzer implements PlugIn {
 		    LeafAnalyzer la = new LeafAnalyzer();	// TODO: Options übergeben
 		    la.runAnalyzer(currentleaf);
 		    la.calcCCD(currentleaf);
+		    la.saveCCDplot(currentleaf, dir1, img.getShortTitle());
+		    la.findLeafAxis(currentleaf, dir1, img.getShortTitle());
 		    la.fillResultsTable(currentleaf);
 
 		}
@@ -71,6 +102,16 @@ public class Batch_Analyzer implements PlugIn {
 
 	    ResultsTable rt = ResultsTable.getResultsTable();
 	    rt.save( dir2);
+	    try{
+		File fileOne=new File(dir1+"classes.txt");
+		FileOutputStream fos=new FileOutputStream(fileOne);
+		ObjectOutputStream oos=new ObjectOutputStream(fos);
+
+		oos.writeObject(classmap);
+		oos.flush();
+		oos.close();
+		fos.close();
+	    }catch(Exception e){}
 	    Instances inst = LeafClassifier.buildInstances(rt);
 
 	    // save weka data
@@ -93,38 +134,38 @@ public class Batch_Analyzer implements PlugIn {
 	    return;
 	}
 
-	    LeafClassifier customClassifier = LeafClassifier.train(dir3);
-	    customClassifier.saveModel(dir4);
+	LeafClassifier customClassifier = LeafClassifier.train(dir3);
+	customClassifier.saveModel(dir4);
 
     }
 
     public static void main(String[] args) {
 
-        // set the plugins.dir property to make the plugin appear in the Plugins menu
-        Class<?> clazz = Batch_Analyzer.class;
-        String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
-        String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length() + clazz.getPackage().getName().length());
-        
-        System.setProperty("plugins.dir", pluginsDir);
+	// set the plugins.dir property to make the plugin appear in the Plugins menu
+	Class<?> clazz = Batch_Analyzer.class;
+	String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
+	String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length() + clazz.getPackage().getName().length());
 
-        // start ImageJ
-        new ImageJ();
+	System.setProperty("plugins.dir", pluginsDir);
 
-        //run the plugin
-        IJ.runPlugIn(clazz.getName(), "");
+	// start ImageJ
+	new ImageJ();
+
+	//run the plugin
+	IJ.runPlugIn(clazz.getName(), "");
 
 
-        IJ.run("Quit");
-        System.exit( 0 );
+	IJ.run("Quit");
+	System.exit( 0 );
     }
 
     public static void close_windows() {
-        //http://imagej.1557.x6.nabble.com/Re-Plugin-Command-To-Close-Window-Without-quot-Save-Changes-quot-Dialog-td3683293.html
-        ImagePlus img;
-        while (null != WindowManager.getCurrentImage()) {
-            img = WindowManager.getCurrentImage();
-            img.changes = false;
-            img.close();
-        }
+	//http://imagej.1557.x6.nabble.com/Re-Plugin-Command-To-Close-Window-Without-quot-Save-Changes-quot-Dialog-td3683293.html
+	ImagePlus img;
+	while (null != WindowManager.getCurrentImage()) {
+	    img = WindowManager.getCurrentImage();
+	    img.changes = false;
+	    img.close();
+	}
     }
 }

@@ -1,12 +1,16 @@
 package net.larla.leafy.common;
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.Point;
 import java.awt.Polygon;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import ij.*;
 import ij.gui.*;
 import ij.measure.*;
 import ij.plugin.filter.Analyzer;
+import ij.process.ImageProcessor;
 import net.larla.leafy.datamodel.*;
 
 public class LeafAnalyzer {
@@ -119,25 +123,25 @@ public class LeafAnalyzer {
 	Roi roi_leaf = leaf.getContour();
 	int pointcount = 0;
         double dist, normdist;
-        ArrayList<Double> ccd = new ArrayList<Double>();
-        ArrayList<Double> normccd = new ArrayList<Double>();
-        int contourpoints = roi_leaf.getPolygon().npoints;
+        //int contourpoints = roi_leaf.getPolygon().npoints;
         Polygon polygon = roi_leaf.getPolygon();
-        for (int i = 0; i < contourpoints; i++) {
+        double[] ccd = new double[polygon.npoints];
+        double[] normccd = new double[ccd.length];
+        for (int i = 0; i < ccd.length; i++) {
         //for (Point p : roi_leaf) {
             Point p = new Point(polygon.xpoints[i], polygon.ypoints[i]) ;
             dist = Math.sqrt( Math.pow(p.getX() - leaf.getCentroidX(), 2) + Math.pow( p.getY() - leaf.getCentroidY(), 2 ) );
-            ccd.add( dist );
+            ccd[i] = dist;
             maxdist = dist > maxdist ? dist : maxdist;
             meandist += dist;
             pointcount++;	// = regionpoints
         }
         meandist /= (double) pointcount;
         // Varianz berechnen -> TODO: gleich oben mitberechnen
-        for (double d : ccd) {
-            vardist = vardist + Math.pow(d - meandist, 2);
-            normdist = d / maxdist;
-            normccd.add(normdist);
+        for (int i = 0; i < ccd.length; i++) {
+            vardist = vardist + Math.pow(ccd[i] - meandist, 2);
+            normdist = ccd[i] / maxdist;
+            normccd[i] = normdist;
             nmeandist += normdist;
         }
         vardist /= (double) pointcount;
@@ -185,5 +189,61 @@ public class LeafAnalyzer {
         
             
 
+    }
+    
+    public ImagePlus getCCDplot(double[] distances, double max){
+	PlotWindow.noGridLines = false; // draw grid lines
+	double[] y = distances;
+	double[] x = new double[y.length];
+	for (int i = 0; i < y.length; i++) {
+	    x[i] = 1.0 * i;
+	    i++;
+	}
+        Plot plot = new Plot("Contour Distances","Contour Point","Distance",x,y);
+        plot.setLimits(0,y.length, 0, max);
+        plot.setLineWidth(2);
+        plot.changeFont(new Font("Helvetica", Font.PLAIN, 16));
+        plot.setColor(Color.blue);
+        ImageProcessor ipp = plot.getProcessor();
+        //plot.show();
+        ImagePlus impp = new ImagePlus("Plot", ipp);
+        return impp;
+	
+    }
+    
+    public void saveCCDplot(Leaf leaf, String dir, String filename) {
+	ImagePlus impp = getCCDplot(leaf.getCcd().getNormccd(), 100d);
+	
+	WindowManager.setTempCurrentImage(impp);
+	// TODO: make directory, if not exist
+        IJ.save( dir + "ccd/" + filename + "-ccd.png" );
+    }
+    
+    public void findLeafAxis(Leaf leaf, String dir, String filename) {
+	RadialDistances rd = leaf.getCcd();
+	double maxvalue = rd.getMaxdist();
+	double threshold = rd.getMeandist();
+	double[] points = rd.getCcd();
+	double[] nms = new double[points.length];
+	int section = points.length / 6;
+	int index;
+	
+	for (int i = 0; i < points.length; i++) {
+	    if (points[i] > threshold) {
+		for (int j = i - section; j < i + section; j++) {
+		    index = j < 0 ? points.length + j : j;	// negativer Überlauf
+		    index = index >= points.length ? index - points.length : index;	// positiver Überlauf
+		    if (points[index] > 0 && points[index] <= points[i]) {
+			points[index] = 0d;
+			
+		    }
+		}
+	    }
+	}
+	ImagePlus impp = getCCDplot(points, maxvalue);
+	//WindowManager.setTempCurrentImage(impp);
+	// TODO: make directory, if not exist
+        //IJ.save( dir + "ccd/" + filename + "-ccdmax.png" );
+	impp.show();
     }
 }
