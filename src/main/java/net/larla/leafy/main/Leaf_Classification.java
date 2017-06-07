@@ -5,7 +5,6 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.Roi;
 import ij.io.OpenDialog;
-import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
 import net.larla.leafy.common.LeafAnalyzer;
@@ -19,6 +18,11 @@ public class Leaf_Classification implements PlugInFilter {
     ImagePlus imp;
     String modelpath = "";
 
+    /**
+     * 
+     * @param arg	String "custom" means that a custom classifier should be used -> display file-open dialogue
+     * @param imp	image to be filtered
+     */
     @Override
     public int setup(String arg, ImagePlus imp) {
 	this.imp = imp;
@@ -29,6 +33,10 @@ public class Leaf_Classification implements PlugInFilter {
 	return DOES_RGB + DOES_8G; // this plugin accepts rgb images and 8-bit grayscale images
     }
 
+    /*
+     * (non-Javadoc)
+     * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
+     */
     @Override
     public void run(ImageProcessor ip) {
 
@@ -81,8 +89,9 @@ public class Leaf_Classification implements PlugInFilter {
 	new ImageJ();
 
 	// open sample
-	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_platanoides_42_MEW2014.png");
-	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Quercus_petraea_16_MEW2014.png");
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_platanoides_42_MEW2014.png");	// rechts
+	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Quercus_petraea_16a_MEW2014.png");	// links
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Salix_alba_30_MEW2014.png");	// quer
 	image.show();
 
 	// run the plugin

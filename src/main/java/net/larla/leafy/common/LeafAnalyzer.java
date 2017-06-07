@@ -15,7 +15,10 @@ import net.larla.leafy.datamodel.*;
 public class LeafAnalyzer {
 
     public Leaf analyze(ImagePlus imp, ImagePlus mask, String groundTruth) {
-
+	RoiManager rm = RoiManager.getInstance();
+	if (rm == null)
+	    rm = new RoiManager();
+	
 	Leaf currentleaf = new Leaf(imp, imp.getShortTitle(), groundTruth, mask.getRoi(), mask);
 	runAnalyzer(currentleaf);
 	calcCCD(currentleaf);
@@ -212,7 +215,7 @@ public class LeafAnalyzer {
     }
 
     public void saveCCDplot(Leaf leaf, String dir, String filename) {
-	ImagePlus impp = getCCDplot(leaf.getCcd().getNormccd(), 100d);
+	ImagePlus impp = getCCDplot(leaf.getCcd().getNormccd(), 1d);
 
 	WindowManager.setTempCurrentImage(impp);
 	// TODO: make directory, if not exist
@@ -222,6 +225,9 @@ public class LeafAnalyzer {
     public void findLeafAxis(Leaf leaf) {
 	ImagePlus imp = leaf.getMask();
 	Roi roi = leaf.getContour();
+	RoiManager rm = RoiManager.getInstance();
+	if (rm == null)
+	    rm = new RoiManager();
 	
 	imp.setRoi(roi);
 	roi.setName("Leaf");
@@ -246,8 +252,14 @@ public class LeafAnalyzer {
 	Roi ln = new Line(feretX, feretY, x2, y2);
 	ln.setName("LeafAxis");
 	leaf.setLeafaxis(ln);
+	
+	rm.add(imp, ln, 0);
     }
 
+    /**
+     * 
+     * @param leaf
+     */
     public void findPetiole(Leaf leaf) {
 	// copied from LeafJ
 	//IJ.log( "start find petiole" );

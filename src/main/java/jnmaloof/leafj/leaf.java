@@ -13,7 +13,7 @@ import ij.plugin.frame.*;
 
 
 public class leaf {
-	public int verbose = 0;
+	public int verbose = 1;
 	private int top;		//petiole top.  Should probably change name
 	private int bottom;		//petiole bottom.
 	private int width;		//width of leaf ROI
@@ -60,8 +60,13 @@ public class leaf {
 		ROI_bottom = ROI_top + height;
 		ROI_right = ROI_left + width;
 		angle = rt.getValue("Angle",row);
-		//angle = rt.getValue("FeretAngle",row);
+		
+		/*angle = rt.getValue("FeretAngle",row);
+		angle = 180 - angle;*/
+		
+		IJ.log("Angle: " + angle);
 		//Note: Angle of 0 = "3 O'clock"
+		if (angle == 0) angle = 0.01;
 		A = Math.toRadians(angle); //Angle of leaf from horizontal
 		wide = (angle < 45 || angle > 135); //true if leaf is more horizontally oriented
 		right = (angle <= 90); //true if leaf is leaning to right		// changed by L. Woelbeling 6.6.2017 due to error if angle == 90
@@ -76,11 +81,10 @@ public class leaf {
 		leafCenter_x = new float[arrayLength];
 		leafCenter_y = new float[arrayLength];
 		if (verbose > 0) {
-			IJ.log("setHyp. ROI_left: "+
-			IJ.d2s(ROI_left) + " ROI_top: " +
-			IJ.d2s(ROI_top) + " w: " +
-			IJ.d2s(width) + " h: " +
-			IJ.d2s(height));
+			IJ.log("setHyp. ROI_left: "+ IJ.d2s(ROI_left) + 
+				" ROI_top: " + IJ.d2s(ROI_top) + 
+				" w: " + IJ.d2s(width) + 
+				" h: " + IJ.d2s(height));
 			IJ.log("wide: " + wide + " leaning right: " + right);
 		} //if verbose
 
@@ -131,7 +135,7 @@ public class leaf {
 			while(x2 < ROI_right  && i < arrayLength) {
 				if (verbose > 1) IJ.log("first while, x2: " + IJ.d2s(x2));
 				x2++;
-				y1 = ROI_bottom - (x2-ROI_left)/Math.tan(A);
+				y1 = ROI_bottom - (x2-ROI_left)/Math.tan(A);	// problem when angle == 0 -> division by 0!!!
 				if (y1 < ROI_top) { // outside of ROI!
 					y1 = ROI_top;
 					x1 = x2 - height*Math.tan(A);

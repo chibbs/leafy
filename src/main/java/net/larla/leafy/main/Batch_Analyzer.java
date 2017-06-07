@@ -1,4 +1,5 @@
 package net.larla.leafy.main;
+import java.awt.Color;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,7 +15,9 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.WindowManager;
+import ij.gui.Overlay;
 import ij.gui.Roi;
+import ij.io.FileSaver;
 import ij.io.SaveDialog;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
@@ -87,8 +90,19 @@ public class Batch_Analyzer implements PlugIn {
 
 		    LeafAnalyzer la = new LeafAnalyzer();	// TODO: Options übergeben
 		    la.runAnalyzer(currentleaf);
+		    la.findLeafAxis(currentleaf);
+		    la.findPetiole(currentleaf);
+		    
+		    img.setOverlay(currentleaf.getPetioleroi(), Color.YELLOW, 3, null);
+		    img = img.flatten();
+		    img.setOverlay(currentleaf.getLeafaxis(), Color.GREEN, 3, null);
+		    /*Overlay ov = new Overlay();
+		    ov.add(currentleaf.getLeafaxis());
+		    img.setOverlay(ov);*/
+		    FileSaver fs = new FileSaver(img.flatten());
+		    fs.saveAsJpeg(dir1 + "ccd/" + img.getShortTitle() + "_axis.jpg");
 		    la.calcCCD(currentleaf);
-		    la.saveCCDplot(currentleaf, dir1, img.getShortTitle());
+		    //la.saveCCDplot(currentleaf, dir1, img.getShortTitle());
 		    la.fillResultsTable(currentleaf);
 
 		}
