@@ -343,7 +343,7 @@ public class leaf {
 		Wand w = new Wand(ip);
 		
 		//draw top line in white
-		ip.setColor(255);
+		ip.setColor(128);
 		//ip.setLineWidth(2);
 		ip.drawLine((int) topLine[0],(int) topLine[1],(int) topLine[2],(int) topLine[3]);
 		
@@ -362,9 +362,10 @@ public class leaf {
 				Wand.FOUR_CONNECTED);
 		if (w.npoints > 0) {
 			PolygonRoi bladeROI = new PolygonRoi(w.xpoints,w.ypoints,w.npoints,Roi.POLYGON);
+			bladeROI.setName("Blade");
 			rm.add(imp,bladeROI,leaf);//need to change leaf number handling
-			rm.select(leaf*2+1);
-			rm.runCommand("Rename", String.valueOf(leaf*2 + 2) + ": Blade " + String.valueOf(leaf+1));
+			//rm.select(leaf*2+1);
+			//rm.runCommand("Rename", String.valueOf(leaf*2 + 2) + ": Blade " + String.valueOf(leaf+1));
 		}if (verbose > 0) IJ.log("end find blade");
 	}
 		
@@ -391,9 +392,10 @@ public void addPetioleToManager(ImagePlus imp, ImageProcessor ip, RoiManager rm,
 	
 	PolygonRoi petioleROI = new PolygonRoi(roi_x, roi_y, nPoints,Roi.POLYLINE);
 //	PolygonRoi petioleROI = new PolygonRoi(petiole_x, petiole_y, petiole_x.length,Roi.POLYLINE);
+	petioleROI.setName("Petiole");
 	rm.add(imp, petioleROI, leaf);
-	rm.select(leaf*2);
-	rm.runCommand("Rename", String.valueOf(leaf*2 + 1) + ": Petiole " + String.valueOf(leaf+1));
+	//rm.select(leaf*2);
+	//rm.runCommand("Rename", String.valueOf(leaf*2 + 1) + ": Petiole " + String.valueOf(leaf+1));
 	if (verbose > 0) IJ.log("end addToManager");
 }
 

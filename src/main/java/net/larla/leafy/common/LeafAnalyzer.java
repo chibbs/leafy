@@ -3,6 +3,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Point;
 import java.awt.Polygon;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -87,7 +88,9 @@ public class LeafAnalyzer {
 	// use centroid as center point (average x and y of all pixels in region (center of mass requires grayscale pic)
 	leaf.setCentroidX(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("X"), 0));
 	leaf.setCentroidY(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Y"), 0));
-
+	
+	// find petiole
+	rt_temp = findPetiole(leaf, rt_temp);
 
 	// Rauhigkeit = Umfang / Umfang der konv. Hülle
 	Roi roi = imp.getRoi();	
@@ -250,50 +253,47 @@ public class LeafAnalyzer {
 	impp.show();
     }
 
-    public void findPetiole(ImagePlus imp_gray) {
+    public ResultsTable findPetiole(Leaf leaf, ResultsTable rt_temp) {
 	// copied from LeafJ
-	IJ.log( "start find petiole" );
-	ImageProcessor tip = imp_gray.getProcessor();
-
-	tip.setAutoThreshold(ImageProcessor.ISODATA, ImageProcessor.OVER_UNDER_LUT );
-	//tip.setAutoThreshold("Moments", false, ImageProcessor.OVER_UNDER_LUT );
-
-	Calibration cal = imp_gray.getCalibration();
-	ResultsTable rt_tmp = new ResultsTable();
-	ResultsTable rt = ResultsTable.getResultsTable();
+	//IJ.log( "start find petiole" );
+	
+	
 	RoiManager rm = RoiManager.getInstance();
+	if (rm == null)
+	    rm = new RoiManager();
+	ResultsTable rt_res = new ResultsTable();
 
-	double minParticleSize = 4000;
-	ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.SHOW_NONE
-		+ParticleAnalyzer.SHOW_RESULTS
-		//+ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES
-		,Measurements.RECT+Measurements.ELLIPSE, rt_tmp, minParticleSize, Double.POSITIVE_INFINITY,0,1);
-	pa.analyze(imp_gray,tip);   // TODO: nur Blatt messen, nicht alle Objekte im Bild
+	ImagePlus imp = leaf.getMask();
+	//imp.show();
+	Calibration cal = imp.getCalibration();
+	ImageProcessor tip = imp.getProcessor();
+	WindowManager.setTempCurrentImage(imp);
+	
+	
+
+	tip.setThreshold(0, 128, 3);
+	//tip.setAutoThreshold(ImageProcessor.ISODATA, ImageProcessor.OVER_UNDER_LUT );
+	//tip.setAutoThreshold("Moments", false, ImageProcessor.OVER_UNDER_LUT );
+	//WindowManager.setTempCurrentImage(imp);
 
 
 	leaf leafCurrent = new leaf();
-	leafCurrent.setLeaf( rt_tmp, 0, cal ); //set initial attributes // TODO: nur aktuelle Ergebnisse hinzufügen
+	leafCurrent.setLeaf( rt_temp, 0, cal ); //set initial attributes // TODO: nur aktuelle Ergebnisse hinzufügen
 	leafCurrent.scanLeaf(tip);          //do a scan across the length to determine widths
 	leafCurrent.findPetiole(tip);           //
 
 	//timp.updateAndDraw();
 	IJ.log("end find Petiole");
-	leafCurrent.addPetioleToManager(imp_gray, tip, rm, 4);
-	leafCurrent.addBladeToManager(imp_gray, tip, rm, 5);
+	leafCurrent.addPetioleToManager(imp, tip, rm, 4);
+	leafCurrent.addBladeToManager(imp, tip, rm, 5);
 
-	/*if (sd.saveRois) rm.runCommand("Save", imp.getShortTitle() + sd.getTruncatedDescription() + "_roi.zip");
-        results.setHeadings(sd.getFieldNames());
-        results.show();
-        results.addResults(sd,rm,tip,timp);*/
-
-	ResultsTable rt_temp = new ResultsTable();
-	Analyzer petioleAnalyzer = new Analyzer(imp_gray,  Measurements.PERIMETER , rt_temp);
+	ResultsTable rt_temp1 = new ResultsTable();
+	Analyzer petioleAnalyzer = new Analyzer(imp,  Measurements.PERIMETER , rt_temp1);
 	petioleAnalyzer.measure();
-	rt_temp.getValue("Perim.",rt_temp.getCounter()-1);
-	rt.addValue( "Petiole Length", rt_temp.getValue("Perim.",rt_temp.getCounter()-1) );
-	//rt.addValue( "Class", cls );
+	
+	rt_temp.addValue( "Petiole Length", rt_temp1.getValue("Perim.",rt_temp1.getCounter()-1) );
 
-	rt.show( "Results" );
+	return rt_temp;
 
 	//timp.close();
     }

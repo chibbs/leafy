@@ -87,7 +87,7 @@ public class Leaf_Classification implements PlugInFilter {
 	// IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/acer_platanoides/Acer_platanoides_3_MEW2014.png");
 	// ImagePlus image =
 	// IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura/quercus_petraea/Quercus_petraea_13_MEW2014.png");
-	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_pseudoplatanus_38_MEW2014.png");
+	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Alnus_glutinosa_18_MEW2014.png");
 	image.show();
 
 	// run the plugin
