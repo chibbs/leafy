@@ -344,7 +344,7 @@ public class leaf {
 		Wand w = new Wand(ip);
 		
 		//draw top line in white
-		ip.setColor(128);
+		ip.setColor(255);
 		//ip.setLineWidth(2);
 		ip.drawLine((int) topLine[0],(int) topLine[1],(int) topLine[2],(int) topLine[3]);
 		
@@ -360,10 +360,10 @@ public class leaf {
 				(int) leafCenter_y[Math.min(top+10,leafCenter_y.length-1)],
 				ip.getMinThreshold(),
 				ip.getMaxThreshold()*.9,
-				Wand.EIGHT_CONNECTED);		// L.Woelbeling 6.6.2017
+				Wand.EIGHT_CONNECTED);		// L.Woelbeling 6.6.2017: EIGHT instead of FOUR
 		if (w.npoints > 0) {
-			bladeROI = new PolygonRoi(w.xpoints,w.ypoints,w.npoints,Roi.POLYGON);
-			bladeROI.setName("Blade");
+			bladeROI = new PolygonRoi(w.xpoints,w.ypoints,w.npoints,Roi.TRACED_ROI);	// L.Woelbeling 6.6.: TRACED_ROI instead of POLYGON
+			bladeROI.setName("Blade");							// L.Woelbeling 6.6.: added
 		}
 		if (verbose > 0) IJ.log("end find blade");
 		
