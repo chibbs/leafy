@@ -60,12 +60,14 @@ public class Leaf_Classification implements PlugInFilter {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
 	}
-	roi_leaf = this.imp.getRoi();
+	roi_leaf = currentleaf.getContour();
 	roi_leaf.setName(cls);
 	this.imp.setRoi(roi_leaf);
 	IJ.run("Add Selection...");
 	IJ.run("Labels...", "color=white font=14 show use draw");
 
+	ImagePlus diagram = new LeafAnalyzer().getCCDplot(currentleaf.getCcd().getCcd(), currentleaf.getCcd().getMaxdist());
+	diagram.show();
     }
 
     /**
@@ -89,8 +91,8 @@ public class Leaf_Classification implements PlugInFilter {
 	new ImageJ();
 
 	// open sample
-	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_platanoides_42_MEW2014.png");	// rechts
-	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Quercus_petraea_16a_MEW2014.png");	// links
+	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_platanoides_42_MEW2014.png");	// rechts
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Quercus_petraea_16_MEW2014.png");	// links
 	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Salix_alba_30_MEW2014.png");	// quer
 	image.show();
 

@@ -1,8 +1,5 @@
 package net.larla.leafy.common;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Point;
-import java.awt.Polygon;
+import java.awt.*;
 import ij.*;
 import ij.gui.*;
 import ij.measure.*;
@@ -15,69 +12,144 @@ import net.larla.leafy.datamodel.*;
 public class LeafAnalyzer {
 
     public Leaf analyze(ImagePlus imp, ImagePlus mask, String groundTruth) {
-	RoiManager rm = RoiManager.getInstance();
-	if (rm == null)
-	    rm = new RoiManager();
 	
 	Leaf currentleaf = new Leaf(imp, imp.getShortTitle(), groundTruth, mask.getRoi(), mask);
-	runAnalyzer(currentleaf);
+	findRegions(currentleaf);	// save all rois to currentleaf
+	addRoisToManager(currentleaf);
+	calculateFeatures(currentleaf);
 	calcCCD(currentleaf);
-	findLeafAxis(currentleaf);
-	findPetiole(currentleaf);
 	fillResultsTable(currentleaf);
 
 	return currentleaf;
     }
-
-    public void runAnalyzer(Leaf leaf) {
-	ResultsTable rt_temp = new ResultsTable();
-	double area, convexlength, perim, majoraxis, minoraxis, ellipsarea;
-
+    
+    public void findRegions(Leaf leaf) {
 	ImagePlus imp = leaf.getImg();
 	WindowManager.setTempCurrentImage(imp);
 
-	IJ.run("Interpolate", "interval=1 smooth");     // needed for moments calculation
+	//IJ.run("Interpolate", "interval=1 smooth");     // needed for moments calculation
+	
+	Roi roi = imp.getRoi();	
+	Polygon hull = roi.getConvexHull();
+	PolygonRoi roi_hull = new PolygonRoi(hull, Roi.TRACED_ROI);
+	roi_hull.setName("Convex Hull");
+	leaf.setHullroi(roi_hull);
+	
+	Roi bbroi = new Roi(roi.getBounds());
+	bbroi.setName("Bounding Box");
+	leaf.setBbroi(bbroi);
+	
+	findLeafAxis(leaf);	// depends on contour
+	findPetiole(leaf);	// depends on convexhull
+	
+	Polygon bladep = leaf.getBladeroi().getConvexHull();
+	PolygonRoi bladehull = new PolygonRoi(bladep, Roi.TRACED_ROI);
+	bladehull.setName("Blade Convex Hull");
+	leaf.setBladehullroi(bladehull);
+    }
+    
+    public void addRoisToManager(Leaf leaf) {
+	RoiManager rm = RoiManager.getInstance();
+	if (rm == null)
+	    rm = new RoiManager();
+	ImagePlus imp = leaf.getImg();
+	
+	rm.add(imp, leaf.getContour(), 1);
+	rm.add(imp, leaf.getBbroi(), 2);
+	rm.add(imp, leaf.getHullroi(), 3);
+	rm.add(imp, leaf.getLeafaxis(), 4);
+	rm.add(imp, leaf.getBladeroi(), 6);
+	rm.add(imp, leaf.getPetioleroi(), 5);
+	rm.add(imp, leaf.getBladehullroi(), 7);
+    }
 
-	/*// same as:
-        IJ.run("Set Measurements...", "area centroid center perimeter bounding fit shape feret's skewness kurtosis display add redirect=None decimal=3");
-        Analyzer.setResultsTable( rt2 );
-        Analyzer.setPrecision( 3 );
-        IJ.run("Measure");*/
+    public void calculateFeatures(Leaf leaf) {
+	ResultsTable rt_temp = new ResultsTable();
+	Analyzer an;
+	Analyzer.setPrecision( 3 );
+	int counter;
+	double area, convexperim, perim, majoraxis, minoraxis, ellipsarea, leafwidth, leafheight, angle, petiolelength, petioleratio;
 
+	ImagePlus imp = leaf.getImg();
+	WindowManager.setTempCurrentImage(imp);
+	
+	
+	// Berechnungen mit der konvexen Hülle
+	imp.setRoi( leaf.getHullroi(), true );
+	rt_temp.reset();
+	an = new Analyzer(imp, 
+		//Measurements.PERIMETER + 
+		Measurements.FERET +
+		Measurements.CENTROID +         // center point of selection (average of x and y coordinates of all pixels) -> X and Y
+		Measurements.CENTER_OF_MASS +    // brightness-weighted average of x and y coordinates (first order spatial moments) -> XM and YM
+		Measurements.LABELS, 
+		rt_temp);
+	an.measure();
+
+	counter = rt_temp.getCounter();
+	if (rt_temp.getCounter()==0) {
+	    //TODO:no results, handle that error here
+	}
+	leafheight = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Feret"), rt_temp.getCounter()-1);
+	leafwidth = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("MinFeret"), rt_temp.getCounter()-1);
+	angle = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("FeretAngle"), rt_temp.getCounter()-1);
+	
+	
+	// Berechnungen des Stiels
+	imp.setRoi(leaf.getPetioleroi(), true);	// TODO: gucken ob anderes ROI weg ist
+	rt_temp.reset();
+	an = new Analyzer(imp,  Measurements.PERIMETER + Measurements.LABELS,  rt_temp);
+	an.measure();
+	petiolelength = rt_temp.getValue("Perim.",rt_temp.getCounter()-1);
+	petioleratio = petiolelength / leafheight;
+	leaf.setPetioleratio(petioleratio);
+	
+	
+	// Berechnungen der Blattspreite
+	imp.setRoi(leaf.getBladeroi(), true);
+	rt_temp.reset();
+	//IJ.run("Interpolate", "interval=1 smooth");     // needed for moments calculation
 	// explanations: see https://imagej.nih.gov/ij/docs/guide/146-30.html
 	int measurements = Measurements.AREA +          // Area of selection in square pixels -> heading Area
 		Measurements.CENTROID +         // center point of selection (average of x and y coordinates of all pixels) -> X and Y
 		Measurements.CENTER_OF_MASS +    // brightness-weighted average of x and y coordinates (first order spatial moments) -> XM and YM
 		Measurements.PERIMETER +         // length of the outside boundary of selection -> Perim.
 		Measurements.RECT +              // smallest rectangle enclosing the selection -> BX, BY, Width and Height
-		Measurements.ELLIPSE +           // Fits an ellipse to selection -> Major, Minor and Angle (center = centroid, angle to x-axis)
+		//Measurements.ELLIPSE +           // Fits an ellipse to selection -> Major, Minor and Angle (center = centroid, angle to x-axis)
 		Measurements.SHAPE_DESCRIPTORS + // shape descriptors: Circularity (Circ.), Aspect ratio (AR), Roundness (Round.), Solidity
 		Measurements.FERET +             // Feret’s diameter: longest distance between any two points along the selection boundary (maximum caliper) -> Feret, FeretAngle, MinFeret, FeretX and FeretY
 		Measurements.SKEWNESS +          // third order moment about the mean -> Skew.
 		Measurements.KURTOSIS +          // fourth order moment about the mean -> Kurt. 
 		Measurements.ADD_TO_OVERLAY +    // measured ROIs are automatically added to the image overlay
 		Measurements.LABELS;             // image name and selection label are recorded in the first column of the Results Table
-	Analyzer an = new Analyzer(imp, measurements, rt_temp);
-	Analyzer.setPrecision( 3 );
+	an = new Analyzer(imp, measurements, rt_temp);
 	an.measure();
-
-	int counter = rt_temp.getCounter();  //number of results
+	/*// same as:
+        IJ.run("Set Measurements...", "area centroid center perimeter bounding fit shape feret's skewness kurtosis display add redirect=None decimal=3");
+        Analyzer.setResultsTable( rt_temp );
+        IJ.run("Measure");*/
+	
+	
+	counter = rt_temp.getCounter();  //number of results
 	if (counter==0) {
 	    //TODO:no results, handle that error here
+	    IJ.log("No results.");
 	} else if (counter > 1) {
 	    // TODO
 	}
+	
+	leaf.setCircularity(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Circ."), rt_temp.getCounter()-1));
+	leaf.setRoundness(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Round"), rt_temp.getCounter()-1));
+	leaf.setSolidity(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Solidity"), rt_temp.getCounter()-1));
+	leaf.setSkewness(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Skew"), rt_temp.getCounter()-1));
+	leaf.setKurtosis(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Kurt"), rt_temp.getCounter()-1));
 
-	leaf.setCircularity(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Circ."), 0));
-	leaf.setRoundness(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Round"), 0));
-	leaf.setSolidity(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Solidity"), 0));
-	leaf.setSkewness(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Skew"), 0));
-	leaf.setKurtosis(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Kurt"), 0));
-
-	majoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Feret"), 0);
-	minoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("MinFeret"), 0); 
-	perim = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Perim."), 0);
-	area = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Area"), 0);
+	majoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Feret"), rt_temp.getCounter()-1);
+	minoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("MinFeret"), rt_temp.getCounter()-1);
+	//majoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Major"), rt_temp.getCounter()-1);
+	//minoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Minor"), rt_temp.getCounter()-1);
+	perim = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Perim."), rt_temp.getCounter()-1);
+	area = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Area"), rt_temp.getCounter()-1);
 	ellipsarea = Math.PI * majoraxis * minoraxis / 4;   // durch 4 teilen, weil nur die Hälfte der Achsen benötigt wird (Radius statt Durchmesser)
 	leaf.setElliptic(area / ellipsarea);
 	leaf.setMaxcaliper(majoraxis);
@@ -86,32 +158,24 @@ public class LeafAnalyzer {
 	leaf.setPerimeter(perim);
 
 	// use centroid as center point (average x and y of all pixels in region (center of mass requires grayscale pic)
-	leaf.setCentroidX(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("X"), 0));
-	leaf.setCentroidY(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Y"), 0));
-
-	// Rauhigkeit = Umfang / Umfang der konv. Hülle
-	Roi roi = imp.getRoi();	
-	Polygon hull = roi.getConvexHull();
-	PolygonRoi roi_hull = new PolygonRoi(hull, Roi.TRACED_ROI);
-	imp.killRoi();
-	imp.setRoi( roi_hull, true );
-	//imp.show();
+	leaf.setCentroidX(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("X"), rt_temp.getCounter()-1));
+	leaf.setCentroidY(rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Y"), rt_temp.getCounter()-1));
+	//IJ.log("Centroid Leaf: " + leaf.getCentroidX() + ", " + leaf.getCentroidY());
+	
+	
+	// TODO
+	// Rauhigkeit = Umfang / Umfang der konv. Hülle der Spreite
+	imp.setRoi(leaf.getBladehullroi(), true);
 	rt_temp.reset();
-	an = new Analyzer(imp, Measurements.PERIMETER + Measurements.LABELS, rt_temp);
+	an = new Analyzer(imp,  Measurements.PERIMETER + Measurements.LABELS,  rt_temp);
 	an.measure();
-	imp.killRoi();
-	imp.setRoi(roi);
-	counter = rt_temp.getCounter();
-	if (rt_temp.getCounter()==0) {
-	    //TODO:no results, handle that error here
-	}
-	convexlength = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Perim."), 0);
-	leaf.setConvexity(perim / convexlength);
-
+	convexperim = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Perim."), rt_temp.getCounter()-1);
+	leaf.setConvexity(convexperim / perim);
+	
 
 	// TODO: add moments
 
-	WindowManager.setTempCurrentImage(null);
+	
 
     }
 
@@ -200,10 +264,9 @@ public class LeafAnalyzer {
 	double[] x = new double[y.length];
 	for (int i = 0; i < y.length; i++) {
 	    x[i] = 1.0 * i;
-	    i++;
 	}
 	Plot plot = new Plot("Contour Distances","Contour Point","Distance",x,y);
-	plot.setLimits(0,y.length, 0, max);
+	plot.setLimits(0,x.length, 0, max);
 	plot.setLineWidth(2);
 	plot.changeFont(new Font("Helvetica", Font.PLAIN, 16));
 	plot.setColor(Color.blue);
@@ -225,9 +288,9 @@ public class LeafAnalyzer {
     public void findLeafAxis(Leaf leaf) {
 	ImagePlus imp = leaf.getMask();
 	Roi roi = leaf.getContour();
-	RoiManager rm = RoiManager.getInstance();
+	/*RoiManager rm = RoiManager.getInstance();
 	if (rm == null)
-	    rm = new RoiManager();
+	    rm = new RoiManager();*/
 	
 	imp.setRoi(roi);
 	roi.setName("Leaf");
@@ -253,7 +316,7 @@ public class LeafAnalyzer {
 	ln.setName("LeafAxis");
 	leaf.setLeafaxis(ln);
 	
-	rm.add(imp, ln, 0);
+	//rm.add(imp, ln, 0);
     }
 
     /**
@@ -262,12 +325,6 @@ public class LeafAnalyzer {
      */
     public void findPetiole(Leaf leaf) {
 	// copied from LeafJ
-	//IJ.log( "start find petiole" );
-	
-	
-	RoiManager rm = RoiManager.getInstance();
-	if (rm == null)
-	    rm = new RoiManager();
 	ResultsTable rt_temp = new ResultsTable();
 
 	ImagePlus imp = leaf.getMask();
@@ -276,62 +333,37 @@ public class LeafAnalyzer {
 	ImageProcessor tip = imp.getProcessor();
 	WindowManager.setTempCurrentImage(imp);
 	
-	Roi roi = imp.getRoi();
+	Roi roi = leaf.getContour();
 	PolygonRoi convexhull = (PolygonRoi) leaf.getHullroi();
 	if (convexhull == null) {
 	    Polygon hull = roi.getConvexHull();
-	    PolygonRoi roi_hull = new PolygonRoi(hull, Roi.TRACED_ROI);
+	    convexhull = new PolygonRoi(hull, Roi.TRACED_ROI);
 	}
 	imp.killRoi();
 	imp.setRoi( convexhull, false );
-	Analyzer an = new Analyzer(imp, Measurements.RECT + Measurements.ELLIPSE + Measurements.FERET + Measurements.LABELS, rt_temp);
+	
+	
+	Analyzer an = new Analyzer(imp, 
+		Measurements.RECT +
+		Measurements.ELLIPSE + 
+		//Measurements.FERET + 
+		Measurements.LABELS, 
+		rt_temp);
 	an.measure();
-	double angle = rt_temp.getValue("Angle",rt_temp.getCounter()-1);
-	IJ.log("Angle: " + angle);
-	imp.killRoi();
-	imp.setRoi(roi);
 
 	tip.setThreshold(0, 128, 3);
 
 
 	leaf leafCurrent = new leaf();
-	leafCurrent.setLeaf( rt_temp, 0, cal ); //set initial attributes // TODO: nur aktuelle Ergebnisse hinzufügen
+	leafCurrent.setLeaf( rt_temp, 0, cal ); //set initial attributes -> TODO: IJ.log entfernen
 	leafCurrent.scanLeaf(tip);          //do a scan across the length to determine widths
 	leafCurrent.findPetiole(tip);           //
 
-	//timp.updateAndDraw();
-	//IJ.log("end find Petiole");
 	PolygonRoi bladeRoi = leafCurrent.getBladeROI(imp, tip);
 	PolygonRoi petioleRoi = leafCurrent.getPetioleROI(imp, tip);
-	imp.setRoi(petioleRoi);
-
-	ResultsTable rt_temp1 = new ResultsTable();
-	Analyzer petioleAnalyzer = new Analyzer(imp,  Measurements.PERIMETER , rt_temp1);
-	petioleAnalyzer.measure();
-	double petiolelength = rt_temp1.getValue("Perim.",rt_temp1.getCounter()-1);
 	
-	rm.add(imp, bladeRoi, 5);
-	rm.add(imp, petioleRoi, 4);
 	leaf.setBladeroi(bladeRoi);
 	leaf.setPetioleroi(petioleRoi);
-	
-	imp.setRoi(roi);
-	roi.setName("Leaf");
-	rm.add(imp, roi, 6);
-	ResultsTable rt_temp2 = new ResultsTable();
-	Analyzer leafAnalyzer = new Analyzer(imp,  Measurements.FERET , rt_temp2);
-	leafAnalyzer.measure();
-	double leafHeight = rt_temp2.getValue("Feret",rt_temp2.getCounter()-1);
-
-	rm.add(imp, leaf.getLeafaxis(), 7);
-	
-	double petioleratio = petiolelength / leafHeight;
-	leaf.setPetioleratio(petioleratio);
-	
-	//rt_temp.addValue( "Petiole Length", rt_temp1.getValue("Perim.",rt_temp1.getCounter()-1) );
-
-	//rt_temp.show("Results");
-
-	//timp.close();
+	//imp.hide();
     }
 }

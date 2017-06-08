@@ -14,6 +14,7 @@ public class Leaf {
     private Roi bladeroi;
     private Roi ellipseroi;
     private Roi leafaxis;
+    private Roi bladehullroi;
     private RadialDistances ccd;
     private double circularity;
     private double roundness;
@@ -267,5 +268,13 @@ public class Leaf {
 
     public void setLeafaxis(Roi leafaxis) {
         this.leafaxis = leafaxis;
+    }
+
+    public Roi getBladehullroi() {
+        return bladehullroi;
+    }
+
+    public void setBladehullroi(Roi bladehullroi) {
+        this.bladehullroi = bladehullroi;
     }
 }

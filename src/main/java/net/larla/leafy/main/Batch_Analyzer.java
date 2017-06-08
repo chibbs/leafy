@@ -1,21 +1,8 @@
 package net.larla.leafy.main;
 import java.awt.Color;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.HashMap;
-import java.util.Map;
-
-import ij.IJ;
-import ij.ImageJ;
-import ij.ImagePlus;
-import ij.WindowManager;
-import ij.gui.Overlay;
+import java.io.*;
+import java.util.*;
+import ij.*;
 import ij.gui.Roi;
 import ij.io.FileSaver;
 import ij.io.SaveDialog;
@@ -63,6 +50,7 @@ public class Batch_Analyzer implements PlugIn {
 		IJ.showStatus(i+"/"+list.length);
 		boolean isDir = (new File(dir1+list[i])).isDirectory();
 		if (!isDir && !list[i].startsWith(".")) {
+		    IJ.log("Image: " + dir1+list[i]);
 		    ImagePlus img = IJ.openImage(dir1+list[i]);
 		    if (img==null) continue;
 
@@ -89,20 +77,17 @@ public class Batch_Analyzer implements PlugIn {
 		    Leaf currentleaf = new Leaf(img, img.getShortTitle(), groundTruth, roi_leaf, imp_bin);
 
 		    LeafAnalyzer la = new LeafAnalyzer();	// TODO: Options übergeben
-		    la.runAnalyzer(currentleaf);
+		    la.calculateFeatures(currentleaf);
 		    la.findLeafAxis(currentleaf);
 		    la.findPetiole(currentleaf);
 		    
 		    img.setOverlay(currentleaf.getPetioleroi(), Color.YELLOW, 3, null);
 		    img = img.flatten();
 		    img.setOverlay(currentleaf.getLeafaxis(), Color.GREEN, 3, null);
-		    /*Overlay ov = new Overlay();
-		    ov.add(currentleaf.getLeafaxis());
-		    img.setOverlay(ov);*/
 		    FileSaver fs = new FileSaver(img.flatten());
 		    fs.saveAsJpeg(dir1 + "ccd/" + img.getShortTitle() + "_axis.jpg");
 		    la.calcCCD(currentleaf);
-		    //la.saveCCDplot(currentleaf, dir1, img.getShortTitle());
+		    la.saveCCDplot(currentleaf, dir1, img.getShortTitle());
 		    la.fillResultsTable(currentleaf);
 
 		}

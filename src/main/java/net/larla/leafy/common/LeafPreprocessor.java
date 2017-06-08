@@ -111,6 +111,7 @@ public class LeafPreprocessor {
         Point stp = new Point((int)rt_temp.getValueAsDouble(rt_temp.getColumnIndex("XStart"), maxrow), 
                               (int)rt_temp.getValueAsDouble(rt_temp.getColumnIndex("YStart"), maxrow));
         IJ.doWand(stp.x, stp.y);
+        IJ.run("Interpolate", "interval=1 smooth");     // needed for moments calculation
         Roi r = imp_bin.getRoi();
         if(r instanceof PolygonRoi){
             return (PolygonRoi) r;

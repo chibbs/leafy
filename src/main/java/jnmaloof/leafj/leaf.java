@@ -9,11 +9,10 @@ import ij.*;
 import ij.process.*;
 import ij.gui.*;
 import ij.measure.*;
-import ij.plugin.frame.*;
 
 
 public class leaf {
-	public int verbose = 1;
+	public int verbose = 0;
 	private int top;		//petiole top.  Should probably change name
 	private int bottom;		//petiole bottom.
 	private int width;		//width of leaf ROI
@@ -66,7 +65,7 @@ public class leaf {
 		
 		IJ.log("Angle: " + angle);
 		//Note: Angle of 0 = "3 O'clock"
-		if (angle == 0) angle = 0.01;
+		if (angle == 0) angle = 0.01;		// L.Woelbeling 6.6.: due to error if angle == 0.0
 		A = Math.toRadians(angle); //Angle of leaf from horizontal
 		wide = (angle < 45 || angle > 135); //true if leaf is more horizontally oriented
 		right = (angle <= 90); //true if leaf is leaning to right		// changed by L. Woelbeling 6.6.2017 due to error if angle == 90
@@ -119,7 +118,7 @@ public class leaf {
 	
 	private void scanWide(ImageProcessor ip) {
 		//scan along the leaf, one row at a time.
-		double x1, x2, y1, y2,xscan;
+		double x1, x2, y1, y2;
 		x1 = y1 = x2 = y2 = -1;
 		//Will use some trig to calculate a line for scanning along leaf
 		//x1,y1 and x2,y2 are start and end points of scan line
@@ -351,7 +350,8 @@ public class leaf {
 		//draw top line in white
 		ip.setColor(255);
 		//ip.setLineWidth(2);
-		ip.drawLine((int) topLine[0],(int) topLine[1],(int) topLine[2],(int) topLine[3]);
+		ip.drawLine((int) topLine[0],(int) topLine[1],(int) Math.ceil(topLine[2]),(int) Math.ceil(topLine[3]));
+		imp.updateAndDraw();
 		
 		//apply the wand
 		if (verbose > 1) {
@@ -365,7 +365,7 @@ public class leaf {
 				(int) leafCenter_y[Math.min(top+10,leafCenter_y.length-1)],
 				ip.getMinThreshold(),
 				ip.getMaxThreshold()*.9,
-				Wand.EIGHT_CONNECTED);		// L.Woelbeling 6.6.2017: EIGHT instead of FOUR
+				Wand.FOUR_CONNECTED);		// L.Woelbeling 6.6.2017: EIGHT instead of FOUR
 		if (w.npoints > 0) {
 			bladeROI = new PolygonRoi(w.xpoints,w.ypoints,w.npoints,Roi.TRACED_ROI);	// L.Woelbeling 6.6.: TRACED_ROI instead of POLYGON
 			bladeROI.setName("Blade");							// L.Woelbeling 6.6.: added
