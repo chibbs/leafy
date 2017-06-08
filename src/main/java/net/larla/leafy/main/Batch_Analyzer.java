@@ -77,17 +77,16 @@ public class Batch_Analyzer implements PlugIn {
 		    Leaf currentleaf = new Leaf(img, img.getShortTitle(), groundTruth, roi_leaf, imp_bin);
 
 		    LeafAnalyzer la = new LeafAnalyzer();	// TODO: Options übergeben
+		    la.findRegions(currentleaf);
 		    la.calculateFeatures(currentleaf);
-		    la.findLeafAxis(currentleaf);
-		    la.findPetiole(currentleaf);
 		    
-		    img.setOverlay(currentleaf.getPetioleroi(), Color.YELLOW, 3, null);
+		    /*img.setOverlay(currentleaf.getPetioleroi(), Color.YELLOW, 3, null);
 		    img = img.flatten();
 		    img.setOverlay(currentleaf.getLeafaxis(), Color.GREEN, 3, null);
 		    FileSaver fs = new FileSaver(img.flatten());
-		    fs.saveAsJpeg(dir1 + "ccd/" + img.getShortTitle() + "_axis.jpg");
+		    fs.saveAsJpeg(dir1 + "ccd/" + img.getShortTitle() + "_axis.jpg");*/
 		    la.calcCCD(currentleaf);
-		    la.saveCCDplot(currentleaf, dir1, img.getShortTitle());
+		    //la.saveCCDplot(currentleaf, dir1, img.getShortTitle());
 		    la.fillResultsTable(currentleaf);
 
 		}

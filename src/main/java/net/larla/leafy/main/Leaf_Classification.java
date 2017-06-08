@@ -1,16 +1,19 @@
 package net.larla.leafy.main;
 
+import java.awt.Frame;
+import java.util.ArrayList;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.WindowManager;
 import ij.gui.Roi;
 import ij.io.OpenDialog;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
-import net.larla.leafy.common.LeafAnalyzer;
-import net.larla.leafy.common.LeafClassifier;
-import net.larla.leafy.common.LeafPreprocessor;
-import net.larla.leafy.datamodel.Leaf;
+import ij.text.TextPanel;
+import ij.text.TextWindow;
+import net.larla.leafy.common.*;
+import net.larla.leafy.datamodel.*;
 
 public class Leaf_Classification implements PlugInFilter {
 
@@ -55,7 +58,7 @@ public class Leaf_Classification implements PlugInFilter {
 
 	try {
 	    cls = lc.predictSingle(currentleaf);
-	    IJ.log(lc.getProp(5).toString());
+	    //IJ.log(lc.getProp(5).toString());
 	} catch (Exception e) {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
@@ -67,6 +70,26 @@ public class Leaf_Classification implements PlugInFilter {
 	this.imp.setRoi(roi_leaf);
 	IJ.run("Add Selection...");
 	IJ.run("Labels...", "color=white font=14 show use draw");
+	
+	
+	String title = "Leafy - Results of classification";
+	TextWindow tw;
+	TextPanel tp;
+	Frame f = WindowManager.getFrame(title);
+	if (f==null || !(f instanceof TextWindow)) {
+		tw = new TextWindow(title,"",400,500);
+	} else {
+		tw = (TextWindow) f;
+	}
+	tp = tw.getTextPanel();
+	tp.appendLine("Your leaf belongs to plant genus " + cls + ".");
+	tp.appendLine("");
+	tp.appendLine("Possibilities:");
+	ArrayList<Tuple> pl = lc.getProp();
+	for (Tuple t : pl) {
+	    tp.appendLine(t.s + ": \t" + t.d + " %");
+	}
+	tw.toFront();
 
 	/*ImagePlus diagram = new LeafAnalyzer().getCCDplot(currentleaf.getCcd().getCcd(), currentleaf.getCcd().getMaxdist());
 	diagram.show();*/
@@ -93,9 +116,10 @@ public class Leaf_Classification implements PlugInFilter {
 	new ImageJ();
 
 	// open sample
-	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_platanoides_42_MEW2014.png");	// rechts
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_campestre_3_MEW2014.png");	// rechts
 	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Quercus_petraea_16_MEW2014.png");	// links
 	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Salix_alba_30_MEW2014.png");	// quer
+	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/1258487290_0004.jpg");
 	image.show();
 
 	// run the plugin

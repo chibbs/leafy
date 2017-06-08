@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import java.util.stream.Stream;
 import ij.IJ;
 import ij.measure.ResultsTable;
 import net.larla.leafy.datamodel.Leaf;
+import net.larla.leafy.datamodel.Tuple;
 import weka.classifiers.Classifier;
 import weka.classifiers.meta.AdaBoostM1;
 import weka.classifiers.trees.J48;
@@ -180,24 +182,28 @@ public class LeafClassifier {
 	return cls;
     }
     
-    public ArrayList<?> getProp(int count) {
+    public ArrayList<Tuple> getProp() {
 	// get probabilities
 	double propabilities[];
-	ArrayList<?> topMatches = new ArrayList<Object>();
+	//ArrayList<?> topMatches = new ArrayList<Object>();
+	ArrayList<Tuple> topMatches = new ArrayList<Tuple>();;
 	    // TODO: auslagern in Methode
 	    // http://stackoverflow.com/questions/31405503/weka-how-to-use-classifier-in-java
 	    try {
 		propabilities = this.classifier.distributionForInstance(testInst);
 		IJ.log("Propabilities:");
-		HashMap<String, Double> poss = new HashMap<String, Double>();
 		for (int a = 0; a < propabilities.length; a++) {
 		    if (propabilities[a] != 0) {
-			//IJ.log("\t\t" + inst.classAttribute().value(a) + ": " + propabilities[a]);
-			poss.put(testInst.classAttribute().value(a), propabilities[a]);	// TODO: kürzen auf 2 Nachkommastellen
+			propabilities[a] = propabilities[a] * 100000;
+			propabilities[a] = Math.round(propabilities[a]);
+			if (propabilities[a] != 0) {
+        			propabilities[a] /= 1000;
+        			//IJ.log("\t\t" + inst.classAttribute().value(a) + ": " + propabilities[a]);
+        			topMatches.add(new Tuple(testInst.classAttribute().value(a), propabilities[a]));	
+			}
 		    }
 		}
-		Stream<Map.Entry<String,Double>> sorted = poss.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue()));
-		topMatches = (ArrayList<?>) sorted.collect(Collectors.toList());
+		Collections.sort(topMatches, Collections.reverseOrder());
 		
 	    } catch (Exception e) {
 		// no handling needed
@@ -205,6 +211,7 @@ public class LeafClassifier {
 	    }
 	    return topMatches;
     }
+   
 
     public static Instances buildInstances(ResultsTable rttmp) {
 	ArrayList<Attribute>      atts;

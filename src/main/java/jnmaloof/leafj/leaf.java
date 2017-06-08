@@ -63,7 +63,7 @@ public class leaf {
 		/*angle = rt.getValue("FeretAngle",row);
 		angle = 180 - angle;*/
 		
-		IJ.log("Angle: " + angle);
+		//IJ.log("Angle: " + angle);
 		//Note: Angle of 0 = "3 O'clock"
 		if (angle == 0) angle = 0.01;		// L.Woelbeling 6.6.: due to error if angle == 0.0
 		A = Math.toRadians(angle); //Angle of leaf from horizontal
