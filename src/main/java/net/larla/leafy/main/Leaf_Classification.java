@@ -60,14 +60,16 @@ public class Leaf_Classification implements PlugInFilter {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
 	}
+	
+	// show name in image
 	roi_leaf = currentleaf.getContour();
 	roi_leaf.setName(cls);
 	this.imp.setRoi(roi_leaf);
 	IJ.run("Add Selection...");
 	IJ.run("Labels...", "color=white font=14 show use draw");
 
-	ImagePlus diagram = new LeafAnalyzer().getCCDplot(currentleaf.getCcd().getCcd(), currentleaf.getCcd().getMaxdist());
-	diagram.show();
+	/*ImagePlus diagram = new LeafAnalyzer().getCCDplot(currentleaf.getCcd().getCcd(), currentleaf.getCcd().getMaxdist());
+	diagram.show();*/
     }
 
     /**

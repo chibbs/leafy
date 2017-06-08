@@ -253,6 +253,7 @@ public class LeafAnalyzer {
 	rt.addValue( "Haralick2", leaf.getHaralick2());
 	rt.addValue( "nMeanDist", leaf.getCcd().getNormMean());
 	rt.addValue( "nDistSD", leaf.getCcd().getNormSdev());
+	rt.addValue( "Petioleratio", leaf.getPetioleratio() );
 
 
 
