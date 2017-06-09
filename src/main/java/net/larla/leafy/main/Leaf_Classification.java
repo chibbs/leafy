@@ -32,6 +32,10 @@ public class Leaf_Classification implements PlugInFilter {
 	if (arg.length() > 0 && arg.equals("custom")) {
 	    OpenDialog od = new OpenDialog("Select classifier...", OpenDialog.getLastDirectory(), "boosted.model");
 	    this.modelpath = od.getDirectory() + od.getFileName();
+	} else if (arg.length() > 0 && arg.equals("genus")) {
+	    this.modelpath = "genus";
+	} else if (arg.length() > 0 && arg.equals("species")) {
+	    this.modelpath = "species";
 	}
 	return DOES_RGB + DOES_8G; // this plugin accepts rgb images and 8-bit grayscale images
     }
@@ -82,7 +86,7 @@ public class Leaf_Classification implements PlugInFilter {
 		tw = (TextWindow) f;
 	}
 	tp = tw.getTextPanel();
-	tp.appendLine("Your leaf belongs to plant genus " + cls + ".");
+	tp.appendLine("Your leaf belongs to plant class " + cls + ".");
 	tp.appendLine("");
 	tp.appendLine("Possibilities:");
 	ArrayList<Tuple> pl = lc.getProp();
@@ -119,11 +123,13 @@ public class Leaf_Classification implements PlugInFilter {
 	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_campestre_3_MEW2014.png");	// rechts
 	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Quercus_petraea_16_MEW2014.png");	// links
 	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Salix_alba_30_MEW2014.png");	// quer
-	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/1258487290_0004.jpg");
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/1258487290_0004.jpg");
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura1/Training/Populus_alba_81_MEW2014.png");	// alt, ohne Stiel
+	ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura2/Test/Populus_alba_81_MEW2014.png");
 	image.show();
 
 	// run the plugin
-	IJ.runPlugIn(clazz.getName(), "");
+	IJ.runPlugIn(clazz.getName(), "custom");
 	//IJ.runPlugIn("Leaf_Classification", "");
 
     }

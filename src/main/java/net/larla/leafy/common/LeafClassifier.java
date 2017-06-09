@@ -31,7 +31,9 @@ import weka.core.converters.ConverterUtils.DataSource;
 
 public class LeafClassifier {
 
-    public final static String FILENAME = "model/j48default.model";
+    public final static String GENUSCLASSIFIER = "model/j48genus.model";
+    public final static String SPECIESCLASSIFIER = "model/j48species.model";
+    public final static String DEFAULTMODEL = SPECIESCLASSIFIER;
     private Classifier classifier;
     private Instances header;
     private Instance testInst;
@@ -46,10 +48,17 @@ public class LeafClassifier {
 	Vector<?> v = new Vector<Object>(2);
 
 	// read model and header
-	if (path == "") {
+	if (path == "" || path == "genus" || path == "species") {
+	    InputStream is1;
+	    if (path == "genus") {
+		is1 = this.getClass().getClassLoader().getResourceAsStream(GENUSCLASSIFIER);
+	    } else if (path == "species") {
+		is1 = this.getClass().getClassLoader().getResourceAsStream(SPECIESCLASSIFIER);
+	    } else {
 	    // read default model from jar
 	    IJ.log("\tload default classifier");
-	    InputStream is1 = this.getClass().getClassLoader().getResourceAsStream(FILENAME);
+	    is1 = this.getClass().getClassLoader().getResourceAsStream(DEFAULTMODEL);
+	    }
 	    try {
 		v = (Vector<?>) SerializationHelper.read(is1);
 	    } catch (Exception e) {
@@ -194,10 +203,10 @@ public class LeafClassifier {
 		IJ.log("Propabilities:");
 		for (int a = 0; a < propabilities.length; a++) {
 		    if (propabilities[a] != 0) {
-			propabilities[a] = propabilities[a] * 100000;
-			propabilities[a] = Math.round(propabilities[a]);
+			propabilities[a] = propabilities[a] * 100;
+			propabilities[a] = Math.round(propabilities[a] * 100);
 			if (propabilities[a] != 0) {
-        			propabilities[a] /= 1000;
+        			propabilities[a] /= 100;
         			//IJ.log("\t\t" + inst.classAttribute().value(a) + ": " + propabilities[a]);
         			topMatches.add(new Tuple(testInst.classAttribute().value(a), propabilities[a]));	
 			}

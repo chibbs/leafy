@@ -1,7 +1,12 @@
 package net.larla.leafy.main;
 import java.awt.Color;
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
+
 import ij.*;
 import ij.gui.Roi;
 import ij.io.FileSaver;
@@ -22,24 +27,9 @@ public class Batch_Analyzer implements PlugIn {
 	String dir1 = IJ.getDirectory("Select folder with training images...");
 	if (dir1==null) 
 	    return;
-	String dir3 = dir1 + "leaf.arff";
+	String dir3 = dir1 + "_leaf.arff";
 	File f = new File(dir3);
-	HashMap<String,String> classmap = new HashMap<String, String>();
-
-	try{
-	    File toRead=new File(dir1+"classes.txt");
-	    FileInputStream fis=new FileInputStream(toRead);
-	    ObjectInputStream ois=new ObjectInputStream(fis);
-
-	    classmap = (HashMap<String,String>)ois.readObject();
-
-	    ois.close();
-	    fis.close();
-	    //print All data in MAP
-	    for(Map.Entry<String,String> m :classmap.entrySet()){
-		System.out.println(m.getKey()+" : "+m.getValue());
-	    }
-	}catch(Exception e){}
+	HashMap<String,String> classmap = file2Map(dir1+"_classes.csv");
 
 	if(!f.exists() || f.isDirectory()) {  // TODO: Teste ob arff-Datei schon existiert
 	    String[] list = new File(dir1).list();
@@ -58,8 +48,8 @@ public class Batch_Analyzer implements PlugIn {
 			groundTruth = classmap.get(list[i]);
 		    } else {
 			if (list[i].contains( "_")) {
-			    //groundTruth = list[i].split( "_" )[0] + " " + list[i].split( "_" )[1];	// Klasse = Gattung und Art
-			    groundTruth = list[i].split( "_" )[0];					// Klasse = Gattung
+			    groundTruth = list[i].split( "_" )[0] + " " + list[i].split( "_" )[1];	// Klasse = Gattung und Art
+			    //groundTruth = list[i].split( "_" )[0];					// Klasse = Gattung
 			    classmap.put(list[i], groundTruth);
 			} else {
 			    groundTruth = "";
@@ -80,11 +70,19 @@ public class Batch_Analyzer implements PlugIn {
 		    la.findRegions(currentleaf);
 		    la.calculateFeatures(currentleaf);
 		    
-		    /*img.setOverlay(currentleaf.getPetioleroi(), Color.YELLOW, 3, null);
-		    img = img.flatten();
-		    img.setOverlay(currentleaf.getLeafaxis(), Color.GREEN, 3, null);
-		    FileSaver fs = new FileSaver(img.flatten());
-		    fs.saveAsJpeg(dir1 + "ccd/" + img.getShortTitle() + "_axis.jpg");*/
+		    // Vergleichsbild speichern
+		    if (checkDir(dir1 + "ccd")) {
+			if (currentleaf.getPetioleroi() != null)
+			    img.setOverlay(currentleaf.getPetioleroi(), Color.CYAN, 3, null);
+			img = img.flatten();
+			if (currentleaf.getLeafaxis() != null)
+			    img.setOverlay(currentleaf.getLeafaxis(), Color.GREEN, 3, null);
+			img = img.flatten();
+			if (currentleaf.getBladeroi() != null)
+			    img.setOverlay(currentleaf.getBladeroi(), Color.RED, 3, null);
+			FileSaver fs = new FileSaver(img.flatten());
+			fs.saveAsJpeg(dir1 + "ccd/" + img.getShortTitle() + "_axis.jpg");
+		    }
 		    la.calcCCD(currentleaf);
 		    //la.saveCCDplot(currentleaf, dir1, img.getShortTitle());
 		    la.fillResultsTable(currentleaf);
@@ -95,20 +93,11 @@ public class Batch_Analyzer implements PlugIn {
 	    IJ.showStatus("");
 
 	    close_windows();
-	    String dir2 = dir1 + "leaf.csv";
+	    String dir2 = dir1 + "_leaf.csv";
 
 	    ResultsTable rt = ResultsTable.getResultsTable();
-	    rt.save( dir2);
-	    try{
-		File fileOne=new File(dir1+"classes.txt");
-		FileOutputStream fos=new FileOutputStream(fileOne);
-		ObjectOutputStream oos=new ObjectOutputStream(fos);
-
-		oos.writeObject(classmap);
-		oos.flush();
-		oos.close();
-		fos.close();
-	    }catch(Exception e){}
+	    //rt.save( dir2);
+	    writeToFile(map2String(classmap),dir1+"_classes.csv");
 	    Instances inst = LeafClassifier.buildInstances(rt);
 
 	    // save weka data
@@ -151,7 +140,6 @@ public class Batch_Analyzer implements PlugIn {
 	//run the plugin
 	IJ.runPlugIn(clazz.getName(), "");
 
-
 	IJ.run("Quit");
 	System.exit( 0 );
     }
@@ -165,4 +153,82 @@ public class Batch_Analyzer implements PlugIn {
 	    img.close();
 	}
     }
+    
+    public String map2String (HashMap<String, String> myMap) {
+	String eol = System.getProperty("line.separator");
+	StringBuilder builder = new StringBuilder();
+	for (Map.Entry<String, String> kvp : myMap.entrySet()) {
+	    builder.append(kvp.getKey());
+	    builder.append(";");
+	    builder.append(kvp.getValue());
+	    //builder.append("\r\n");
+	    builder.append(eol);
+	}
+
+	String content = builder.toString().trim();
+	return content;
+    }
+    
+    public void writeToFile(String text, String path) {
+	try{
+	    PrintWriter writer = new PrintWriter(path, "UTF-8");
+	    writer.println(text);
+	    writer.close();
+	} catch (IOException e) {
+	   // do something
+	}
+    }
+    
+    public HashMap<String, String> file2Map(String path) {
+	HashMap<String, String> result = new HashMap<String, String>();
+	
+	FileReader fr;
+	BufferedReader br = null;
+	try {
+	    fr = new FileReader(path);
+	    br = new BufferedReader(fr);
+	    String zeile = br.readLine();
+	    while( zeile != null )
+	    {
+	      String[] parts = zeile.split(";");
+	      result.put(parts[0], parts[1]);
+	      
+	      zeile = br.readLine();
+	    }
+	    
+	    br.close();
+	    
+	} catch (FileNotFoundException e) {
+
+	} catch (IOException e) {
+
+	} 
+
+	
+	return result;
+	    
+	    
+    }
+    
+    public boolean checkDir(String dirname) {
+	// https://www.java-forum.org/thema/wie-kann-ich-schauen-ob-ein-ordner-vorhanden-ist.568/
+	 File reviewdir = new File(dirname);
+	        if (reviewdir.exists())    // Überprüfen, ob es den Ordner gibt
+	        {
+	            return true;
+	        }
+	        else
+	        {
+	            if (reviewdir.mkdir())    // Erstellen des Ordners
+	            {
+	                return true;
+	            }
+	            else
+	            {
+	                return false;
+	            }
+	        }
+    }
+    
+    
 }

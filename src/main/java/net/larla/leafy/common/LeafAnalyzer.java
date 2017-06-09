@@ -33,10 +33,12 @@ public class LeafAnalyzer {
 	Polygon hull = roi.getConvexHull();
 	PolygonRoi roi_hull = new PolygonRoi(hull, Roi.TRACED_ROI);
 	roi_hull.setName("Convex Hull");
+	roi_hull.setStrokeColor(Color.MAGENTA);
 	leaf.setHullroi(roi_hull);
 
 	Roi bbroi = new Roi(roi.getBounds());
 	bbroi.setName("Bounding Box");
+	bbroi.setStrokeColor(Color.BLUE);
 	leaf.setBbroi(bbroi);
 
 	findLeafAxis(leaf);	// depends on contour
@@ -47,6 +49,7 @@ public class LeafAnalyzer {
 	    Polygon bladep = leaf.getBladeroi().getConvexHull();
 	    PolygonRoi bladehull = new PolygonRoi(bladep, Roi.TRACED_ROI);
 	    bladehull.setName("Blade Convex Hull");
+	    bladehull.setStrokeColor(Color.MAGENTA);
 	    leaf.setBladehullroi(bladehull);
 	}
 	
@@ -331,6 +334,7 @@ public class LeafAnalyzer {
 	}
 	Roi ln = new Line(feretX, feretY, x2, y2);
 	ln.setName("LeafAxis");
+	ln.setStrokeColor(Color.GREEN);
 	leaf.setLeafaxis(ln);
 
 	//rm.add(imp, ln, 0);
@@ -377,7 +381,11 @@ public class LeafAnalyzer {
 	leafCurrent.findPetiole(tip);           //
 
 	PolygonRoi bladeRoi = leafCurrent.getBladeROI(imp, tip);
+	if (bladeRoi != null)
+	    bladeRoi.setStrokeColor(Color.RED);
 	PolygonRoi petioleRoi = leafCurrent.getPetioleROI(imp, tip);
+	if (petioleRoi != null)
+	    petioleRoi.setStrokeColor(Color.YELLOW);
 
 	leaf.setBladeroi(bladeRoi);
 	leaf.setPetioleroi(petioleRoi);
