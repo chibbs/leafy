@@ -9,8 +9,8 @@ import java.util.Vector;
 
 import ij.IJ;
 import ij.measure.ResultsTable;
-import net.larla.leafy.datamodel.Leaf;
-import net.larla.leafy.datamodel.Tuple;
+import net.larla.leafy.datatypes.Leaf;
+import net.larla.leafy.datatypes.Tuple;
 import net.larla.leafy.helpers.*;
 import weka.classifiers.Classifier;
 import weka.classifiers.evaluation.Evaluation;

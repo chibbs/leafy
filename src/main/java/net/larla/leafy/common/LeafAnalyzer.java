@@ -8,7 +8,7 @@ import ij.plugin.filter.Analyzer;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 import jnmaloof.leafj.leaf;
-import net.larla.leafy.datamodel.*;
+import net.larla.leafy.datatypes.*;
 import net.larla.leafy.helpers.FileHelper;
 
 public class LeafAnalyzer {

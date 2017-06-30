@@ -1,4 +1,4 @@
-package net.larla.leafy.datamodel;
+package net.larla.leafy.datatypes;
 
 public class Tuple implements Comparable<Tuple> {
     @Override

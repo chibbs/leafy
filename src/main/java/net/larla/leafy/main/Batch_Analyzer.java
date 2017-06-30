@@ -7,7 +7,7 @@ import ij.io.SaveDialog;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import net.larla.leafy.common.*;
-import net.larla.leafy.datamodel.*;
+import net.larla.leafy.datatypes.*;
 import net.larla.leafy.helpers.*;
 
 public class Batch_Analyzer extends Leafy implements PlugIn {

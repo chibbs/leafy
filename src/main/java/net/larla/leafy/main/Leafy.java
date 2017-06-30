@@ -10,8 +10,8 @@ import ij.gui.Roi;
 import ij.io.OpenDialog;
 import ij.text.TextPanel;
 import ij.text.TextWindow;
-import net.larla.leafy.datamodel.Leaf;
-import net.larla.leafy.datamodel.Tuple;
+import net.larla.leafy.datatypes.Leaf;
+import net.larla.leafy.datatypes.Tuple;
 
 public class Leafy {
 

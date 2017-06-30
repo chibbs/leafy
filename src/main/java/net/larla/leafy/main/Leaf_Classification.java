@@ -11,8 +11,8 @@ import ij.process.ImageProcessor;
 import net.larla.leafy.common.LeafAnalyzer;
 import net.larla.leafy.common.LeafClassifier;
 import net.larla.leafy.common.LeafPreprocessor;
-import net.larla.leafy.datamodel.Leaf;
-import net.larla.leafy.datamodel.Tuple;
+import net.larla.leafy.datatypes.Leaf;
+import net.larla.leafy.datatypes.Tuple;
 
 public class Leaf_Classification extends Leafy implements PlugInFilter {
     ImagePlus imp;
