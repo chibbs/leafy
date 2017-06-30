@@ -4,22 +4,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.Random;
 import java.util.Vector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import ij.IJ;
 import ij.measure.ResultsTable;
 import net.larla.leafy.datamodel.Leaf;
 import net.larla.leafy.datamodel.Tuple;
+import net.larla.leafy.helpers.*;
 import weka.classifiers.Classifier;
+import weka.classifiers.evaluation.Evaluation;
 import weka.classifiers.meta.AdaBoostM1;
 import weka.classifiers.trees.J48;
 import weka.core.Attribute;
@@ -33,9 +27,10 @@ public class LeafClassifier {
 
     public final static String GENUSCLASSIFIER = "model/j48genus.model";
     public final static String SPECIESCLASSIFIER = "model/j48species.model";
+    public final static String WOPETCLASSIFIER = "model/j48wopet.model";
     public final static String DEFAULTMODEL = SPECIESCLASSIFIER;
     private Classifier classifier;
-    private Instances header;
+    private Instances header;		// classes and feature set
     private Instance testInst;
 
     public LeafClassifier(Classifier classifier, Instances header) {
@@ -48,30 +43,23 @@ public class LeafClassifier {
 	Vector<?> v = new Vector<Object>(2);
 
 	// read model and header
-	if (path == "" || path == "genus" || path == "species") {
+	if (path.equals("") || path.equals("wopet")) {
 	    InputStream is1;
-	    if (path == "genus") {
-		is1 = this.getClass().getClassLoader().getResourceAsStream(GENUSCLASSIFIER);
-	    } else if (path == "species") {
-		is1 = this.getClass().getClassLoader().getResourceAsStream(SPECIESCLASSIFIER);
+	    if (path.equals("wopet")) {
+		is1 = this.getClass().getClassLoader().getResourceAsStream(WOPETCLASSIFIER);
 	    } else {
-	    // read default model from jar
-	    IJ.log("\tload default classifier");
-	    is1 = this.getClass().getClassLoader().getResourceAsStream(DEFAULTMODEL);
+		// read default model from jar
+		IJ.log("\tload default classifier");
+		is1 = this.getClass().getClassLoader().getResourceAsStream(DEFAULTMODEL);
 	    }
 	    try {
 		v = (Vector<?>) SerializationHelper.read(is1);
+		is1.close();
 	    } catch (Exception e) {
 		e.printStackTrace();
 		throw new UnsupportedOperationException("Classifier model could not be loaded.");
 	    }
 
-	    try {
-		is1.close();
-	    } catch (IOException e) {
-		// handling not needed
-		e.printStackTrace();
-	    }
 	} else {
 	    // read custom model from file system
 
@@ -109,25 +97,41 @@ public class LeafClassifier {
 	AdaBoostM1 ab = new AdaBoostM1();
 	ab.setClassifier(new J48());
 	ab.setNumIterations(100);
+	
+	
+	
 	try {
+	    data.randomize(new java.util.Random(0));
+
+            // Separate split into training and testing arrays
+            int trainSize = (int) Math.round(data.numInstances() * 0.8);
+            int testSize = data.numInstances() - trainSize;
+            Instances train = new Instances(data, 0, trainSize);
+            Instances test = new Instances(data, trainSize, testSize);
+            
+            ab.buildClassifier(train);
+            Evaluation eval = new Evaluation(train); 
+            eval.evaluateModel(ab, test);
+            
+            IJ.log("Training finished!");
+            IJ.log("Percent correct: "+
+                               Double.toString(eval.pctCorrect()));
+
 	    ab.buildClassifier(data);
 	} catch (Exception e) {
 	    e.printStackTrace();
 	    throw new IllegalStateException("Classifier could not be built.");
 	}
-	IJ.log("Training finished!");
-
+	
 	LeafClassifier lc = new LeafClassifier(ab, new Instances(data, 0));
 
 	return lc;
     }
 
     public String predictSingle(Leaf currentleaf) {
-	// TODO: error handling in try/catch-Blöcken!!!
 
 	IJ.log("Predicting...");
 	String cls = "";
-	double[] propabilities = null;
 	double pred = -1.0;
 	double actclassnum;
 	String actclass = currentleaf.getLeafclass();
@@ -135,11 +139,11 @@ public class LeafClassifier {
 	    throw new IllegalStateException("Classification not possible: no classifier present.");
 	}
 
-	Instances data = buildInstances(ResultsTable.getResultsTable());	// TODO: not from table but from leaf!
+	Instances data = WekaHelper.buildInstances(ResultsTable.getResultsTable());	// TODO: not from table but from leaf!
 
 	// output predictions
 	for (int i1 = 0; i1 < data.numInstances(); i1++) {
-	    Instance curr = data.instance(i1);
+	    Instance currFeature = data.instance(i1);
 	    // create an instance for the classifier that fits the training data
 	    // Instances object returned here might differ slightly from the one
 	    // used during training the classifier, e.g., different order of
@@ -157,14 +161,14 @@ public class LeafClassifier {
 			// attributes that have 0 labels, which can easily happen with
 			// data loaded from a database
 			if ((this.header.attribute(n).numValues() > 0) && (att.numValues() > 0)) {
-			    String label = curr.stringValue(att);
+			    String label = currFeature.stringValue(att);
 			    int index = this.header.attribute(n).indexOfValue(label);
 			    if (index != -1)
 				testInst.setValue(n, index);
 			}
 		    }
 		    else if (att.isNumeric()) {
-			testInst.setValue(n, curr.value(att));
+			testInst.setValue(n, currFeature.value(att));
 		    }
 		    else {
 			throw new IllegalStateException("Unhandled attribute type! " + att.toString());
@@ -191,113 +195,32 @@ public class LeafClassifier {
 	return cls;
     }
     
-    public ArrayList<Tuple> getProp() {
+    public ArrayList<Tuple> getProb() {
 	// get probabilities
-	double propabilities[];
+	double probabilities[];
 	//ArrayList<?> topMatches = new ArrayList<Object>();
 	ArrayList<Tuple> topMatches = new ArrayList<Tuple>();;
-	    // TODO: auslagern in Methode
-	    // http://stackoverflow.com/questions/31405503/weka-how-to-use-classifier-in-java
-	    try {
-		propabilities = this.classifier.distributionForInstance(testInst);
-		IJ.log("Propabilities:");
-		for (int a = 0; a < propabilities.length; a++) {
-		    if (propabilities[a] != 0) {
-			propabilities[a] = propabilities[a] * 100;
-			propabilities[a] = Math.round(propabilities[a] * 100);
-			if (propabilities[a] != 0) {
-        			propabilities[a] /= 100;
-        			//IJ.log("\t\t" + inst.classAttribute().value(a) + ": " + propabilities[a]);
-        			topMatches.add(new Tuple(testInst.classAttribute().value(a), propabilities[a]));	
-			}
+	// http://stackoverflow.com/questions/31405503/weka-how-to-use-classifier-in-java
+	try {
+	    probabilities = this.classifier.distributionForInstance(testInst);
+	    IJ.log("Probabilities:");
+	    for (int a = 0; a < probabilities.length; a++) {
+		if (probabilities[a] != 0) {
+		    probabilities[a] = probabilities[a] * 100;
+		    probabilities[a] = Math.round(probabilities[a] * 100);
+		    if (probabilities[a] != 0) {
+			probabilities[a] /= 100;
+			//IJ.log("\t\t" + inst.classAttribute().value(a) + ": " + propabilities[a]);
+			topMatches.add(new Tuple(testInst.classAttribute().value(a), probabilities[a]));	
 		    }
 		}
-		Collections.sort(topMatches, Collections.reverseOrder());
-		
-	    } catch (Exception e) {
-		// no handling needed
-		e.printStackTrace();
 	    }
-	    return topMatches;
-    }
-   
+	    Collections.sort(topMatches, Collections.reverseOrder());
 
-    public static Instances buildInstances(ResultsTable rttmp) {
-	ArrayList<Attribute>      atts;
-	ArrayList<String>      attVals = new ArrayList<String>();
-	Instances       data;
-	double[]        vals;
-	int             i;
-	int colindex;
-	double numval;
-	String strval;
-	HashSet<String> classvalues = new HashSet<String>();
-
-	// 1. set up attributes
-	atts = new ArrayList<Attribute>();
-	String[] headings = rttmp.getHeadings();
-	int classindex = rttmp.getColumnIndex("Class");
-	if (classindex != ResultsTable.COLUMN_NOT_FOUND) {
-	    for (int r = 0; r < rttmp.getCounter(); r++)
-		classvalues.add(rttmp.getStringValue(classindex, r));
-	    classvalues.add("?");
+	} catch (Exception e) {
+	    // no handling needed
 	}
-
-	//vals = new double[data.numAttributes()];
-	int attnum = rttmp.getLastColumn() + 1;
-	vals = new double[attnum];
-	i = 0;
-	for (String heading: headings) {
-	    colindex = rttmp.getColumnIndex(heading);	// index of column in table!
-	    numval = rttmp.getValueAsDouble(colindex, 0);
-	    if (Double.isNaN(numval)) {
-		strval = rttmp.getStringValue(colindex, 0);
-		if (heading == "Class") {
-		    attVals = new ArrayList<String>();
-		    for (String val : classvalues)
-			attVals.add(val);
-		    atts.add(new Attribute("Class", attVals));
-		} else {
-		    atts.add(new Attribute(heading, true));
-		}
-	    } else {
-		atts.add(new Attribute(heading));
-	    }
-	    i++;
-	}
-	// 2. create Instances object
-	data = new Instances("MyRelation", atts, 0);
-	if (classindex >= 0) {
-	    data.setClassIndex(classindex);
-	} else {
-	    data.setClassIndex(data.numAttributes() - 1);
-	}
-
-	for (int row = 0; row < rttmp.getCounter(); row++) {
-	    vals = new double[data.numAttributes()];
-	    i = 0;
-	    for (String heading: headings) {
-		colindex = rttmp.getColumnIndex(heading);	// index of column in table!
-		numval = rttmp.getValueAsDouble(colindex, row);
-		if (Double.isNaN(numval)) {
-		    strval = rttmp.getStringValue(colindex, row);
-		    if (data.attribute(i).isNominal()) {
-
-
-			vals[i] = attVals.indexOf(strval);
-		    } else if (data.attribute(i).isString()) {
-			vals[i] = data.attribute(i).addStringValue(strval);
-		    }
-		} else {
-		    vals[i] = numval;
-		}
-		i++;
-	    }
-	    // add
-	    data.add(new DenseInstance(1.0, vals));
-	}
-
-	return data;
+	return topMatches;
     }
 
     public void saveModel(String modelpath) {

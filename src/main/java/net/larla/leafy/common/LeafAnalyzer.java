@@ -2,20 +2,36 @@ package net.larla.leafy.common;
 import java.awt.*;
 import ij.*;
 import ij.gui.*;
+import ij.io.FileSaver;
 import ij.measure.*;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 import jnmaloof.leafj.leaf;
 import net.larla.leafy.datamodel.*;
+import net.larla.leafy.helpers.FileHelper;
 
 public class LeafAnalyzer {
+    /*public static final int OPTION1 = 1,
+    OPTION2 = 2,
+    OPTION3 = 4;*/
+    public static final int 	FINDPETIOLE = 1,
+	    			USEROIMANAGER = 2;
+    private int settings;
+    
+    public LeafAnalyzer(int op) {
+	this.settings = op;
+    }
+    public LeafAnalyzer() {
+	this.settings = 0;
+    }
 
     public Leaf analyze(ImagePlus imp, ImagePlus mask, String groundTruth) {
 
 	Leaf currentleaf = new Leaf(imp, imp.getShortTitle(), groundTruth, mask.getRoi(), mask);
 	findRegions(currentleaf);	// save all rois to currentleaf
-	addRoisToManager(currentleaf);
+	if (isSet(USEROIMANAGER))
+	    addRoisToManager(currentleaf);
 	calculateFeatures(currentleaf);
 	calcCCD(currentleaf);
 	fillResultsTable(currentleaf);
@@ -42,19 +58,21 @@ public class LeafAnalyzer {
 	leaf.setBbroi(bbroi);
 
 	findLeafAxis(leaf);	// depends on contour
-	findPetiole(leaf);	// depends on convexhull
+	if (isSet(LeafAnalyzer.FINDPETIOLE)) {
+	    findPetiole(leaf);	// depends on convexhull
 
-	Roi bladeroi = leaf.getBladeroi();
-	if (bladeroi != null) {
-	    Polygon bladep = leaf.getBladeroi().getConvexHull();
-	    PolygonRoi bladehull = new PolygonRoi(bladep, Roi.TRACED_ROI);
-	    bladehull.setName("Blade Convex Hull");
-	    bladehull.setStrokeColor(Color.MAGENTA);
-	    leaf.setBladehullroi(bladehull);
-	}
-	
-	if (leaf.getBladeroi() == null || leaf.getPetioleroi() == null) {
-	    IJ.log("Blade/Petiole not found!");
+	    Roi bladeroi = leaf.getBladeroi();
+	    if (bladeroi != null) {
+		Polygon bladep = leaf.getBladeroi().getConvexHull();
+		PolygonRoi bladehull = new PolygonRoi(bladep, Roi.TRACED_ROI);
+		bladehull.setName("Blade Convex Hull");
+		bladehull.setStrokeColor(Color.MAGENTA);
+		leaf.setBladehullroi(bladehull);
+	    }
+
+	    if (leaf.getBladeroi() == null || leaf.getPetioleroi() == null) {
+		IJ.log("Blade/Petiole not found!");
+	    }
 	}
     }
 
@@ -68,9 +86,14 @@ public class LeafAnalyzer {
 	rm.add(imp, leaf.getBbroi(), 2);
 	rm.add(imp, leaf.getHullroi(), 3);
 	rm.add(imp, leaf.getLeafaxis(), 4);
-	rm.add(imp, leaf.getBladeroi(), 6);
-	rm.add(imp, leaf.getPetioleroi(), 5);
-	rm.add(imp, leaf.getBladehullroi(), 7);
+	if (isSet(LeafAnalyzer.FINDPETIOLE)) {
+	    if (leaf.getBladeroi() != null)
+		rm.add(imp, leaf.getBladeroi(), 6);
+	    if (leaf.getPetioleroi() != null)
+		rm.add(imp, leaf.getPetioleroi(), 5);
+	    if (leaf.getBladehullroi() != null)
+		rm.add(imp, leaf.getBladehullroi(), 7);
+	}
     }
 
     public void calculateFeatures(Leaf leaf) {
@@ -304,6 +327,22 @@ public class LeafAnalyzer {
 	// TODO: make directory, if not exist
 	IJ.save( dir + "ccd/" + filename + "-ccd.png" );
     }
+    
+    public void saveOverlayImg (Leaf currentleaf, String dir, ImagePlus img) {
+	// Vergleichsbild speichern
+	    if (FileHelper.checkDir(dir)) {
+		if (currentleaf.getPetioleroi() != null)
+		    img.setOverlay(currentleaf.getPetioleroi(), Color.CYAN, 3, null);
+		img = img.flatten();
+		if (currentleaf.getLeafaxis() != null)
+		    img.setOverlay(currentleaf.getLeafaxis(), Color.GREEN, 3, null);
+		img = img.flatten();
+		if (currentleaf.getBladeroi() != null)
+		    img.setOverlay(currentleaf.getBladeroi(), Color.RED, 3, null);
+		FileSaver fs = new FileSaver(img.flatten());
+		fs.saveAsJpeg(dir + "/" + img.getShortTitle() + "_axis.jpg");
+	    }
+    }
 
     public void findLeafAxis(Leaf leaf) {
 	ImagePlus imp = leaf.getMask();
@@ -390,5 +429,13 @@ public class LeafAnalyzer {
 	leaf.setBladeroi(bladeRoi);
 	leaf.setPetioleroi(petioleRoi);
 	//imp.hide();
+    }
+    
+    private boolean isSet(int op) {
+	if( (this.settings & op) != 0 ){
+	    return true;
+	} else {
+	return false;
+	}
     }
 }

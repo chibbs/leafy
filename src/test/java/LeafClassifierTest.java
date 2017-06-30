@@ -3,6 +3,7 @@ import org.junit.Test;
 
 import ij.measure.ResultsTable;
 import net.larla.leafy.common.LeafClassifier;
+import net.larla.leafy.helpers.WekaHelper;
 import weka.core.Instances;
 
 public class LeafClassifierTest {
@@ -24,7 +25,7 @@ public class LeafClassifierTest {
 
 	// build Instances
 	try {
-	    inst = LeafClassifier.buildInstances(rt_test);
+	    inst = WekaHelper.buildInstances(rt_test);
 	} catch (Exception e) {
 	    System.out.println(e);
 	}
@@ -45,7 +46,7 @@ public class LeafClassifierTest {
 
 	// build Instances
 	try {
-	    inst = LeafClassifier.buildInstances(rt_test);
+	    inst = WekaHelper.buildInstances(rt_test);
 	    Assert.assertTrue(inst.classIndex() == 0);
 	} catch (Exception e) {
 	    System.out.println(e);
@@ -72,7 +73,7 @@ public class LeafClassifierTest {
 
 	// build Instances
 	try {
-	    inst = LeafClassifier.buildInstances(rt_test);
+	    inst = WekaHelper.buildInstances(rt_test);
 	    Assert.assertTrue(inst.classIndex() == 0);
 	} catch (Exception e) {
 	    System.out.println(e);
@@ -99,7 +100,7 @@ public class LeafClassifierTest {
 
 	// build Instances
 	try {
-	    inst = LeafClassifier.buildInstances(rt_test);
+	    inst = WekaHelper.buildInstances(rt_test);
 
 	} catch (Exception e) {
 	    System.out.println(e);
@@ -125,7 +126,7 @@ public class LeafClassifierTest {
 
 	// build Instances
 	try {
-	    inst = LeafClassifier.buildInstances(rt_test);
+	    inst = WekaHelper.buildInstances(rt_test);
 	} catch (Exception e) {
 	    System.out.println(e);
 	}
@@ -149,7 +150,7 @@ public class LeafClassifierTest {
 
 	// build Instances
 	try {
-	    inst = LeafClassifier.buildInstances(rt_test);
+	    inst = WekaHelper.buildInstances(rt_test);
 	} catch (Exception e) {
 	    System.out.println(e);
 	}

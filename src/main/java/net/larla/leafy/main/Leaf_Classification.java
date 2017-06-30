@@ -1,25 +1,21 @@
 package net.larla.leafy.main;
 
-import java.awt.Frame;
 import java.util.ArrayList;
+
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
-import ij.WindowManager;
-import ij.gui.Roi;
 import ij.io.OpenDialog;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
-import ij.text.TextPanel;
-import ij.text.TextWindow;
-import net.larla.leafy.common.*;
-import net.larla.leafy.datamodel.*;
+import net.larla.leafy.common.LeafAnalyzer;
+import net.larla.leafy.common.LeafClassifier;
+import net.larla.leafy.common.LeafPreprocessor;
+import net.larla.leafy.datamodel.Leaf;
+import net.larla.leafy.datamodel.Tuple;
 
-public class Leaf_Classification implements PlugInFilter {
-
-    static boolean showContours = false;
+public class Leaf_Classification extends Leafy implements PlugInFilter {
     ImagePlus imp;
-    String modelpath = "";
 
     /**
      * 
@@ -28,15 +24,8 @@ public class Leaf_Classification implements PlugInFilter {
      */
     @Override
     public int setup(String arg, ImagePlus imp) {
+	this.parseArg(arg);
 	this.imp = imp;
-	if (arg.length() > 0 && arg.equals("custom")) {
-	    OpenDialog od = new OpenDialog("Select classifier...", OpenDialog.getLastDirectory(), "boosted.model");
-	    this.modelpath = od.getDirectory() + od.getFileName();
-	} else if (arg.length() > 0 && arg.equals("genus")) {
-	    this.modelpath = "genus";
-	} else if (arg.length() > 0 && arg.equals("species")) {
-	    this.modelpath = "species";
-	}
 	return DOES_RGB + DOES_8G; // this plugin accepts rgb images and 8-bit grayscale images
     }
 
@@ -49,51 +38,23 @@ public class Leaf_Classification implements PlugInFilter {
 
 	ImagePlus imp_bin = LeafPreprocessor.preprocess(this.imp);
 
-	Roi roi_leaf = imp_bin.getRoi();
-	this.imp.setRoi(roi_leaf, true);
-
-	Leaf currentleaf = new LeafAnalyzer().analyze(imp, imp_bin, "?");
-	//new LeafAnalyzer().findLeafAxis(currentleaf, "", "test");
+	this.imp.setRoi(imp_bin.getRoi(), true);
 	
-	//ResultsTable.getResultsTable().show("Results");
+	int anOptions = (findPetiole)?1:0 * LeafAnalyzer.FINDPETIOLE;
+	Leaf currentleaf = new LeafAnalyzer(anOptions).analyze(imp, imp_bin, "?");
 	LeafClassifier lc = new LeafClassifier(this.modelpath);
-	//Instances inst = lc.buildInstances(ResultsTable.getResultsTable());
 	String cls = "";
 
-	try {
-	    cls = lc.predictSingle(currentleaf);
-	    //IJ.log(lc.getProp(5).toString());
-	} catch (Exception e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	}
+	cls = lc.predictSingle(currentleaf);
+
+	ArrayList<Tuple> pl = lc.getProb();
 	
 	// show name in image
-	roi_leaf = currentleaf.getContour();
-	roi_leaf.setName(cls);
-	this.imp.setRoi(roi_leaf);
-	IJ.run("Add Selection...");
-	IJ.run("Labels...", "color=white font=14 show use draw");
+	this.createOverlay(currentleaf, cls, this.imp);
 	
+	// show results
+	this.showResults(cls, pl);
 	
-	String title = "Leafy - Results of classification";
-	TextWindow tw;
-	TextPanel tp;
-	Frame f = WindowManager.getFrame(title);
-	if (f==null || !(f instanceof TextWindow)) {
-		tw = new TextWindow(title,"",400,500);
-	} else {
-		tw = (TextWindow) f;
-	}
-	tp = tw.getTextPanel();
-	tp.appendLine("Your leaf belongs to plant class " + cls + ".");
-	tp.appendLine("");
-	tp.appendLine("Possibilities:");
-	ArrayList<Tuple> pl = lc.getProp();
-	for (Tuple t : pl) {
-	    tp.appendLine(t.s + ": \t" + t.d + " %");
-	}
-	tw.toFront();
 
 	/*ImagePlus diagram = new LeafAnalyzer().getCCDplot(currentleaf.getCcd().getCcd(), currentleaf.getCcd().getMaxdist());
 	diagram.show();*/
@@ -133,5 +94,7 @@ public class Leaf_Classification implements PlugInFilter {
 	//IJ.runPlugIn("Leaf_Classification", "");
 
     }
+    
+    
 
 }
