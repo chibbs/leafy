@@ -29,7 +29,7 @@ public class Leafy {
 		IJ.run("Labels...", "color=white font=14 show use draw");
     }
     
-    protected void showResults(String cls, ArrayList<Tuple> pl) {
+    protected void showResults(String cls, ArrayList<Tuple> pl, String imagename) {
 	String title = "Leafy - Results of classification";
 	TextWindow tw;
 	TextPanel tp;
@@ -40,17 +40,18 @@ public class Leafy {
 	    tw = (TextWindow) f;
 	}
 	tp = tw.getTextPanel();
+	tp.append("Classified leaf in image " + imagename + "...");
 	if (cls != "") {
-	    tp.appendLine("Your leaf belongs to plant class " + cls + ".");
+	    tp.appendLine("This leaf belongs to plant class " + cls + ".");
 	} else {
 	    tp.appendLine("The plant class of this leaf could not be determined." );  
 	}
 	if (!pl.isEmpty()) {
-	    tp.appendLine("");
 	    tp.appendLine("Probabilities:");
 	    for (Tuple t : pl) {
 		tp.appendLine(t.s + ": \t" + t.d + " %");
 	    }
+	    tp.appendLine("");
 	}
 	tw.toFront();
     }

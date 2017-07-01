@@ -187,7 +187,7 @@ public class LeafClassifier {
 	    actclassnum = testInst.classValue();
 	    if (Double.isNaN(actclassnum))
 		actclassnum = -1;
-	    IJ.log("actual: " + actclass + " (" + (int)actclassnum + "), predicted: " + cls + " (" + (int)pred + ")");
+	    //IJ.log("actual: " + actclass + " (" + (int)actclassnum + "), predicted: " + cls + " (" + (int)pred + ")");
 
 	}
 

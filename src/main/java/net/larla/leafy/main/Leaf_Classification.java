@@ -53,7 +53,7 @@ public class Leaf_Classification extends Leafy implements PlugInFilter {
 	this.createOverlay(currentleaf, cls, this.imp);
 	
 	// show results
-	this.showResults(cls, pl);
+	this.showResults(cls, pl, this.imp.getShortTitle());
 	
 
 	/*ImagePlus diagram = new LeafAnalyzer().getCCDplot(currentleaf.getCcd().getCcd(), currentleaf.getCcd().getMaxdist());
