@@ -8,7 +8,7 @@ import ij.plugin.filter.ParticleAnalyzer;
 import ij.process.*;
 
 public class LeafPreprocessor {
-    
+
     public static ImagePlus preprocess (ImagePlus imp) {
 	int type = imp.getType();
 	String title = imp.getShortTitle();
@@ -35,7 +35,6 @@ public class LeafPreprocessor {
     }
 
     public static ImagePlus convertToGray(ImagePlus imp, String title) {
-        // TODO: String title optional machen
         ImageProcessor ip = imp.getProcessor();
         // convert to gray scale using blue channel
         ColorProcessor cp = (ColorProcessor) ip;
@@ -43,13 +42,11 @@ public class LeafPreprocessor {
         ByteProcessor bp_gray = cp.convertToByteProcessor();
         ImagePlus imp_gray = new ImagePlus(title + " (grayscale)", bp_gray);
         return imp_gray;
-        //return bp_gray;
     }
 
     public static ImagePlus convertToBinary(ImagePlus imp_gray, String title) {
         ImageProcessor bp_gray = imp_gray.getProcessor();
         
-        // TODO: Check ob grau oder RGB und convertToGray ggf. aufrufen
         int th = bp_gray.getAutoThreshold();
         //IJ.log( "Creating binary image... Threshold: " + th );
         ByteProcessor bp_bin = (ByteProcessor) bp_gray.duplicate();
@@ -108,8 +105,11 @@ public class LeafPreprocessor {
                 }
             }
         }
-        Point stp = new Point((int)rt_temp.getValueAsDouble(rt_temp.getColumnIndex("XStart"), maxrow), 
-                              (int)rt_temp.getValueAsDouble(rt_temp.getColumnIndex("YStart"), maxrow));
+        Point stp = new Point(
+        	(int)rt_temp.getValueAsDouble(
+        		rt_temp.getColumnIndex("XStart"), maxrow), 
+                (int)rt_temp.getValueAsDouble(
+                	rt_temp.getColumnIndex("YStart"), maxrow));
         IJ.doWand(stp.x, stp.y);
         IJ.run("Interpolate", "interval=1 smooth");     // needed for moments calculation
         Roi r = imp_bin.getRoi();

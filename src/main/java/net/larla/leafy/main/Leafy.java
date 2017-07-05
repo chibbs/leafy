@@ -18,6 +18,7 @@ public class Leafy {
     static boolean showContours = true;
     String modelpath = "";
     boolean findPetiole = true;
+    boolean verbose = true;
     
     
     protected void createOverlay (Leaf l, String cls, ImagePlus imp) {
@@ -73,6 +74,9 @@ public class Leafy {
 	    case "withoutpetiole":
 		this.findPetiole = false;
 		this.modelpath = "wopet";
+		break;
+	    case "verbose":
+		this.verbose = true;
 		break;
 	    }
 	}

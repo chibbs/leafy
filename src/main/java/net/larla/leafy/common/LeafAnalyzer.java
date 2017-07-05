@@ -12,11 +12,9 @@ import net.larla.leafy.datatypes.*;
 import net.larla.leafy.helpers.FileHelper;
 
 public class LeafAnalyzer {
-    /*public static final int OPTION1 = 1,
-    OPTION2 = 2,
-    OPTION3 = 4;*/
-    public static final int 	FINDPETIOLE = 1,
-	    			USEROIMANAGER = 2;
+    public static final int 	VERBOSEMODE = 1,
+	    			FINDPETIOLE = 2,
+	    			USEROIMANAGER = 4;
     private int settings;
     
     public LeafAnalyzer(int op) {
@@ -101,7 +99,8 @@ public class LeafAnalyzer {
 	Analyzer an;
 	Analyzer.setPrecision( 3 );
 	int counter;
-	double area, convexperim, perim, majoraxis, minoraxis, ellipsarea, leafwidth, leafheight, angle, petiolelength, petioleratio;
+	double area, convexperim, perim, majoraxis, minoraxis, ellipsarea, 
+		leafwidth, leafheight, angle, petiolelength, petioleratio;
 
 	ImagePlus imp = leaf.getImg();
 	WindowManager.setTempCurrentImage(imp);

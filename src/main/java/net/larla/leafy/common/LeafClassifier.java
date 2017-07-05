@@ -1,10 +1,8 @@
 package net.larla.leafy.common;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Random;
 import java.util.Vector;
 
 import ij.IJ;
@@ -32,6 +30,7 @@ public class LeafClassifier {
     private Classifier classifier;
     private Instances header;		// classes and feature set
     private Instance testInst;
+    private static boolean verbose = false;
 
     public LeafClassifier(Classifier classifier, Instances header) {
 	super();
@@ -49,7 +48,7 @@ public class LeafClassifier {
 		is1 = this.getClass().getClassLoader().getResourceAsStream(WOPETCLASSIFIER);
 	    } else {
 		// read default model from jar
-		IJ.log("\tload default classifier");
+		if (verbose) IJ.log("\tload default classifier");
 		is1 = this.getClass().getClassLoader().getResourceAsStream(DEFAULTMODEL);
 	    }
 	    try {
@@ -70,7 +69,7 @@ public class LeafClassifier {
 		throw new UnsupportedOperationException("Classifier model could not be loaded.");
 	    }
 
-	    IJ.log("\tload classifier from " + path);
+	    if (verbose) IJ.log("\tload classifier from " + path);
 	}
 	this.classifier = (Classifier) v.get(0);
 	this.header = (Instances) v.get(1);
@@ -78,7 +77,7 @@ public class LeafClassifier {
     }
 
     public static LeafClassifier train(String datapath) {
-	IJ.log("Training classifier with data from " + datapath + "...");
+	if (verbose) IJ.log("Training classifier with data from " + datapath + "...");
 
 	// load training data from csv
 	DataSource source;
@@ -130,20 +129,20 @@ public class LeafClassifier {
 
     public String predictSingle(Leaf currentleaf) {
 
-	IJ.log("Predicting...");
+	if (verbose) IJ.log("Predicting...");
 	String cls = "";
 	double pred = -1.0;
 	double actclassnum;
-	String actclass = currentleaf.getLeafclass();
+	//String actclass = currentleaf.getLeafclass();
 	if (this.classifier == null || this.header == null) {
 	    throw new IllegalStateException("Classification not possible: no classifier present.");
 	}
 
-	Instances data = WekaHelper.buildInstances(ResultsTable.getResultsTable());	// TODO: not from table but from leaf!
+	Instances leafdata = WekaHelper.buildInstances(ResultsTable.getResultsTable());	// TODO: not from table but from leaf!
 
 	// output predictions
-	for (int i1 = 0; i1 < data.numInstances(); i1++) {
-	    Instance currFeature = data.instance(i1);
+	for (int i1 = 0; i1 < leafdata.numInstances(); i1++) {
+	    Instance currFeatureVector = leafdata.instance(i1);
 	    // create an instance for the classifier that fits the training data
 	    // Instances object returned here might differ slightly from the one
 	    // used during training the classifier, e.g., different order of
@@ -151,27 +150,27 @@ public class LeafClassifier {
 	    testInst = new DenseInstance(this.header.numAttributes());
 	    testInst.setDataset(this.header);
 	    for (int n = 0; n < this.header.numAttributes(); n++) {
-		Attribute att = data.attribute(this.header.attribute(n).name());
+		Attribute feature = leafdata.attribute(this.header.attribute(n).name());
 		// original attribute is also present in the current dataset
-		if (att != null) {
-		    if (att.isNominal()) {
+		if (feature != null) {
+		    if (feature.isNominal()) {
 			// is this label also in the original data?
 			// Note:
 			// "numValues() > 0" is only used to avoid problems with nominal
 			// attributes that have 0 labels, which can easily happen with
 			// data loaded from a database
-			if ((this.header.attribute(n).numValues() > 0) && (att.numValues() > 0)) {
-			    String label = currFeature.stringValue(att);
+			if ((this.header.attribute(n).numValues() > 0) && (feature.numValues() > 0)) {
+			    String label = currFeatureVector.stringValue(feature);
 			    int index = this.header.attribute(n).indexOfValue(label);
 			    if (index != -1)
 				testInst.setValue(n, index);
 			}
 		    }
-		    else if (att.isNumeric()) {
-			testInst.setValue(n, currFeature.value(att));
+		    else if (feature.isNumeric()) {
+			testInst.setValue(n, currFeatureVector.value(feature));
 		    }
 		    else {
-			throw new IllegalStateException("Unhandled attribute type! " + att.toString());
+			throw new IllegalStateException("Unhandled attribute type! " + feature.toString());
 		    }
 		}
 	    }
@@ -189,9 +188,9 @@ public class LeafClassifier {
 		actclassnum = -1;
 	    //IJ.log("actual: " + actclass + " (" + (int)actclassnum + "), predicted: " + cls + " (" + (int)pred + ")");
 
-	}
+	}	// TODO: funktioniert nicht bei mehreren Instances
 
-	IJ.log("Predicting finished!");
+	if (verbose) IJ.log("Predicting finished!");
 	return cls;
     }
     
@@ -203,7 +202,7 @@ public class LeafClassifier {
 	// http://stackoverflow.com/questions/31405503/weka-how-to-use-classifier-in-java
 	try {
 	    probabilities = this.classifier.distributionForInstance(testInst);
-	    IJ.log("Probabilities:");
+	    if (verbose) IJ.log("Probabilities:");
 	    for (int a = 0; a < probabilities.length; a++) {
 		if (probabilities[a] != 0) {
 		    probabilities[a] = probabilities[a] * 100;

@@ -40,7 +40,9 @@ public class Leaf_Classification extends Leafy implements PlugInFilter {
 
 	this.imp.setRoi(imp_bin.getRoi(), true);
 	
-	int anOptions = (findPetiole)?1:0 * LeafAnalyzer.FINDPETIOLE;
+	int anOptions = ((verbose)?1:0 * LeafAnalyzer.VERBOSEMODE) +
+			((findPetiole)?1:0 * LeafAnalyzer.FINDPETIOLE) +
+			LeafAnalyzer.USEROIMANAGER;
 	Leaf currentleaf = new LeafAnalyzer(anOptions).analyze(imp, imp_bin, "?");
 	LeafClassifier lc = new LeafClassifier(this.modelpath);
 	String cls = "";
@@ -90,7 +92,7 @@ public class Leaf_Classification extends Leafy implements PlugInFilter {
 	image.show();
 
 	// run the plugin
-	IJ.runPlugIn(clazz.getName(), "custom");
+	IJ.runPlugIn(clazz.getName(), "");
 	//IJ.runPlugIn("Leaf_Classification", "");
 
     }
