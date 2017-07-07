@@ -32,6 +32,33 @@ public class Leaf {
     private double centroidX;
     private double centroidY;
     private double petioleratio;
+    private double ampvar;
+    private double radratio;
+    private double normvar;
+
+    public double getNormvar() {
+        return normvar;
+    }
+
+    public void setNormvar(double normvar) {
+        this.normvar = normvar;
+    }
+
+    public double getRadratio() {
+        return radratio;
+    }
+
+    public void setRadratio(double radratio) {
+        this.radratio = radratio;
+    }
+
+    public double getAmpvar() {
+        return ampvar;
+    }
+
+    public void setAmpvar(double ampvar) {
+        this.ampvar = ampvar;
+    }
 
     public Roi getBbroi() {
         return bbroi;

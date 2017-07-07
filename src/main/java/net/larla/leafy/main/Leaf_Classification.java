@@ -40,9 +40,11 @@ public class Leaf_Classification extends Leafy implements PlugInFilter {
 
 	this.imp.setRoi(imp_bin.getRoi(), true);
 	
-	int anOptions = ((verbose)?1:0 * LeafAnalyzer.VERBOSEMODE) +
-			((findPetiole)?1:0 * LeafAnalyzer.FINDPETIOLE) +
-			LeafAnalyzer.USEROIMANAGER;
+	int anOptions = ((verbose)?1:0) * LeafAnalyzer.VERBOSEMODE +
+			((findPetiole)?1:0) * LeafAnalyzer.FINDPETIOLE +
+			LeafAnalyzer.USEROIMANAGER+ 
+		    	((this.saveoverlayimg)?1:0) * LeafAnalyzer.SAVEOVERLAYIMG+ 
+		    	((this.saveccdplot)?1:0) * LeafAnalyzer.SAVECCD;
 	Leaf currentleaf = new LeafAnalyzer(anOptions).analyze(imp, imp_bin, "?");
 	LeafClassifier lc = new LeafClassifier(this.modelpath);
 	String cls = "";
@@ -83,12 +85,16 @@ public class Leaf_Classification extends Leafy implements PlugInFilter {
 	new ImageJ();
 
 	// open sample
-	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_campestre_3_MEW2014.png");	// rechts
-	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Quercus_petraea_16_MEW2014.png");	// links
-	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Salix_alba_30_MEW2014.png");	// quer
-	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/1258487290_0004.jpg");
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Ulmus_minor_24_MEW2014 - Kopie.png");
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Quercus_petraea_56_MEW2014 - Kopie.png");
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Salix_alba_6_MEW2014.png");
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Alnus_glutinosa_18_MEW2014.png");
+	ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Acer_campestre_6_MEW2014.png");
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Platanus_hispanica_20_MEW2014.png");
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/Testbilder/Testbild2.png");
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Desktop/test.png");
 	//ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura1/Training/Populus_alba_81_MEW2014.png");	// alt, ohne Stiel
-	ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura2/Test/Populus_alba_81_MEW2014.png");
+	//ImagePlus image = IJ.openImage("C:/Users/Laura/Dropbox/BA/Bilddatenbank/Laura2/Test/Populus_alba_81_MEW2014.png");
 	image.show();
 
 	// run the plugin

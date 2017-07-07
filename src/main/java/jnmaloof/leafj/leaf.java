@@ -365,7 +365,7 @@ public class leaf {
 				(int) leafCenter_y[Math.min(top+10,leafCenter_y.length-1)],
 				ip.getMinThreshold(),
 				ip.getMaxThreshold()*.9,
-				Wand.FOUR_CONNECTED);		// L.Woelbeling 6.6.2017: EIGHT instead of FOUR
+				Wand.FOUR_CONNECTED);
 		if (w.npoints > 0) {
 			bladeROI = new PolygonRoi(w.xpoints,w.ypoints,w.npoints,Roi.TRACED_ROI);	// L.Woelbeling 6.6.: TRACED_ROI instead of POLYGON
 			bladeROI.setName("Blade");							// L.Woelbeling 6.6.: added

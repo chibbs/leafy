@@ -43,7 +43,7 @@ public class Batch_Analyzer extends Leafy implements PlugIn {
 		    } else {
 			if (imglist[i].contains( "_")) {
 			    groundTruth = imglist[i].split( "_" )[0] + " " + imglist[i].split( "_" )[1];	// Klasse = Gattung und Art
-			    //groundTruth = list[i].split( "_" )[0];					// Klasse = Gattung
+			    //groundTruth = list[i].split( "_" )[0];						// Klasse = Gattung
 			    classmap.put(imglist[i], groundTruth);
 			} else {
 			    groundTruth = "";
@@ -57,11 +57,13 @@ public class Batch_Analyzer extends Leafy implements PlugIn {
 
 		    img.setRoi(imp_bin.getRoi(), true);
 
-		    int anOptions = (findPetiole)?1:0 * LeafAnalyzer.FINDPETIOLE;
+		    int anOptions = ((verbose)?1:0) * LeafAnalyzer.VERBOSEMODE+
+			    	    ((findPetiole)?1:0) * LeafAnalyzer.FINDPETIOLE + 
+			    	    ((this.saveoverlayimg)?1:0) * LeafAnalyzer.SAVEOVERLAYIMG+ 
+			    	    ((this.saveccdplot)?1:0) * LeafAnalyzer.SAVECCD;
 		    LeafAnalyzer la = new LeafAnalyzer(anOptions);
-		    Leaf currentleaf = la.analyze(img, imp_bin, groundTruth);
-		    //la.saveCCDplot(currentleaf, trainfolder + "ccd/, img.getShortTitle());
-		    //la.saveOverlayImg(currentleaf, trainfolder + "ccd/", img);
+		    la.analyze(img, imp_bin, groundTruth);
+		    
 
 		}
 	    }
@@ -103,7 +105,7 @@ public class Batch_Analyzer extends Leafy implements PlugIn {
 	new ImageJ();
 
 	//run the plugin
-	IJ.runPlugIn(clazz.getName(), "withoutpetiole");
+	IJ.runPlugIn(clazz.getName(), "");
 
 	IJ.run("Quit");
 	System.exit( 0 );

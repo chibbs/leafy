@@ -19,6 +19,8 @@ public class Leafy {
     String modelpath = "";
     boolean findPetiole = true;
     boolean verbose = true;
+    boolean saveoverlayimg = false;
+    boolean saveccdplot = false;
     
     
     protected void createOverlay (Leaf l, String cls, ImagePlus imp) {
@@ -74,6 +76,12 @@ public class Leafy {
 	    case "withoutpetiole":
 		this.findPetiole = false;
 		this.modelpath = "wopet";
+		break;
+	    case "saveoverlayimg":
+		this.saveoverlayimg = true;
+		break;
+	    case "saveccd":
+		this.saveccdplot = true;
 		break;
 	    case "verbose":
 		this.verbose = true;

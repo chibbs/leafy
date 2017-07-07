@@ -238,6 +238,7 @@ public class widthArrayLeaf {
 	}
 
 	private void setThresholds() {
+	    if (diff.length > 0) {
 		float[] tmpDiff = new float[diff.length];
 		System.arraycopy(diff,0,tmpDiff,0,diff.length);
 		Arrays.sort(tmpDiff); //a sorted array of the differences in width
@@ -254,6 +255,7 @@ public class widthArrayLeaf {
 		nonZeroLength = tmpWidths.length-i;
 		widthThreshold = tmpWidths[(int) Math.round(.05*nonZeroLength) + i]  ; //5th percentile
 		//perhaps still need to deal with runningWindow i.e. adjust based on length.
+	    }
 
 	}
 

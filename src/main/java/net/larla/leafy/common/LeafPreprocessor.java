@@ -63,61 +63,93 @@ public class LeafPreprocessor {
         WindowManager.setTempCurrentImage(imp_bin);
         //IJ.log("Apply morphologic filter: Close");
         ByteProcessor bp_bin = (ByteProcessor) imp_bin.getProcessor();
-        bp_bin.dilate();
-        bp_bin.erode();
+        //imp_bin.show();
+        
         // fill holes
-        imp_bin.updateAndDraw();
         IJ.run(imp_bin, "Fill Holes", "");
+        
+        bp_bin.erode();
+        bp_bin.dilate();
 
         IJ.setBackgroundColor( 255, 255, 255 );
+        //imp_bin.updateAndDraw();
 
         // clear pixels outside leaf
         Roi roi_leaf = getLeafRoi(imp_bin);
+        
         bp_bin.fillOutside( roi_leaf );
-        imp_bin.updateAndDraw();
+        //imp_bin.updateAndDraw();
+        imp_bin.setRoi(roi_leaf);
+        //imp_bin.show();
     }
 
     public static PolygonRoi getLeafRoi(ImagePlus imp_bin){
-        ResultsTable rt_temp = new ResultsTable();
-        // https://imagej.nih.gov/ij/developer/source/ij/plugin/filter/ParticleAnalyzer.java.html
-        ParticleAnalyzer pat = new ParticleAnalyzer(
-                                                    //ParticleAnalyzer.ADD_TO_MANAGER+
-                                                    //ParticleAnalyzer.SHOW_OVERLAY_OUTLINES+
-                                                    ParticleAnalyzer.INCLUDE_HOLES+
-                                                    ParticleAnalyzer.RECORD_STARTS, 
-                                                    Measurements.AREA, rt_temp, 10, Double.POSITIVE_INFINITY, 0, 1);
-        pat.analyze( imp_bin );
+	// attention: 4-neighbourhood may cause problems with wand (start point of particle may not be connected) -> problem when using morphologic closing
+	// 8-neighbourhood may cause problems with blade segmentation (line between petiole and blade is too narrow, intersection may not be recognized)
+	int minThresh, maxThresh;
+	double maxarea = 0;
+	
+	// analyze particles and find biggest
+	ResultsTable rt_temp = new ResultsTable();
+	ParticleAnalyzer pat = new ParticleAnalyzer(
+		ParticleAnalyzer.INCLUDE_HOLES+
+		ParticleAnalyzer.RECORD_STARTS, 
+		Measurements.AREA + Measurements.CENTROID, 
+		rt_temp, 10, Double.POSITIVE_INFINITY, 0, 1);
+	pat.analyze( imp_bin );
 
-        int counter = rt_temp.getCounter();  //number of results
-        if (counter==0) {
-            //TODO:no results, handle that error here
-        }
-        int maxrow = 0;
-        if (counter > 1) {
-            int col = rt_temp.getColumnIndex("Area");
-            double area, maxarea = 0;
+	int counter = rt_temp.getCounter();  //number of results
+	if (counter==0) {
+	    throw new IllegalStateException("Segmentation Error: No Regions Not Found!");
+	}
+	int maxrow = 0;
+	if (counter > 1) {
+	    int col = rt_temp.getColumnIndex("Area");
 
-            for (int row=0; row<counter; row++) {
-                area = rt_temp.getValueAsDouble(col, row); //all the Area values
-                if (area > maxarea) {
-                    maxarea = area;
-                    maxrow = row;
-                }
-            }
-        }
-        Point stp = new Point(
-        	(int)rt_temp.getValueAsDouble(
-        		rt_temp.getColumnIndex("XStart"), maxrow), 
-                (int)rt_temp.getValueAsDouble(
-                	rt_temp.getColumnIndex("YStart"), maxrow));
-        IJ.doWand(stp.x, stp.y);
-        IJ.run("Interpolate", "interval=1 smooth");     // needed for moments calculation
-        Roi r = imp_bin.getRoi();
-        if(r instanceof PolygonRoi){
-            return (PolygonRoi) r;
-        } else {
-            return null;    //TODO
-        }
+	    for (int row=0; row<counter; row++) {
+		double area = rt_temp.getValueAsDouble(col, row); //all the Area values
+		if (area > maxarea) {
+		    maxarea = area;
+		    maxrow = row;
+		}
+	    }
+	}
+	
+	// use start point of biggest region to trace contour
+	Point stp = new Point(
+		(int)rt_temp.getValueAsDouble(
+			rt_temp.getColumnIndex("XStart"), maxrow), 
+		(int)rt_temp.getValueAsDouble(
+			rt_temp.getColumnIndex("YStart"), maxrow));
+	Roi r = imp_bin.getRoi();
+
+	ImageProcessor ip = imp_bin.getProcessor();
+	Wand w = new Wand(ip);
+	int thresh = ip.getAutoThreshold();
+	double bg = ip.getBackgroundValue();
+	if (thresh > bg) {
+	    minThresh = thresh;
+	    maxThresh = 255;
+	} else {
+	    minThresh = 0;
+	    maxThresh = thresh;
+	}
+	w.autoOutline(stp.x, 
+		stp.y,
+		minThresh,
+		maxThresh,
+		Wand.FOUR_CONNECTED);		// FOUR nehmen: EIGHT ist komisch, macht teilweise mehr Punkte, teilweise genauso viel wie FOUR; außerdem wird InterpolatedPolygon verwendet, um wirklich alle Pixel zu bekommen und das liefert eh ViererNachbarschaft...
+
+	// create ROI from contour points
+	if (w.npoints > 0) {
+	    r = new PolygonRoi(w.xpoints,w.ypoints,w.npoints,Roi.TRACED_ROI);
+	    r.setName("Leaf");
+	} else {
+	    // no region found
+	    throw new IllegalStateException("Segmentation Error: Leaf Region Not Found!");
+	}
+	return (PolygonRoi) r;
+
     }
 
     public static ImagePlus cropImage(ImagePlus imp){
