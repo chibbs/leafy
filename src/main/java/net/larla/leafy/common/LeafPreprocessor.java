@@ -67,18 +67,19 @@ public class LeafPreprocessor {
         
         // fill holes
         IJ.run(imp_bin, "Fill Holes", "");
+        imp_bin.updateAndDraw();
         
         bp_bin.erode();
         bp_bin.dilate();
 
         IJ.setBackgroundColor( 255, 255, 255 );
-        //imp_bin.updateAndDraw();
+        imp_bin.updateAndDraw();
 
         // clear pixels outside leaf
         Roi roi_leaf = getLeafRoi(imp_bin);
         
         bp_bin.fillOutside( roi_leaf );
-        //imp_bin.updateAndDraw();
+        imp_bin.updateAndDraw();
         imp_bin.setRoi(roi_leaf);
         //imp_bin.show();
     }

@@ -105,7 +105,7 @@ public class Batch_Analyzer extends Leafy implements PlugIn {
 	new ImageJ();
 
 	//run the plugin
-	IJ.runPlugIn(clazz.getName(), "");
+	IJ.runPlugIn(clazz.getName(), "withoutpetiole");
 
 	IJ.run("Quit");
 	System.exit( 0 );
