@@ -203,7 +203,7 @@ public class LeafAnalyzer {
    	
    	majoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("Feret"), rt_temp.getCounter()-1);
 	minoraxis = rt_temp.getValueAsDouble(rt_temp.getColumnIndex("MinFeret"), rt_temp.getCounter()-1);
-	ellipsarea = Math.PI * majoraxis * minoraxis / 4;   // durch 4 teilen, weil nur die Hälfte der Achsen benötigt wird (Radius statt Durchmesser)
+	ellipsarea = Math.PI * majoraxis * minoraxis / 4;   // durch 4 teilen, weil nur die Hälfte der Achsen benötigt wird (Radius statt Durchmesser)	// TODO: Elongiertheit 1 - klein / groß
 	leaf.setElliptic(area / ellipsarea);
    	
    	
@@ -458,8 +458,7 @@ public class LeafAnalyzer {
 		rt_temp);
 	an.measure();
 
-	tip.setThreshold(0, 128, 3);
-
+	tip.setThreshold(0, 128, 3);	// TODO: change 3 to OVER_UNDER_LUT
 
 	leaf leafCurrent = new leaf();
 	leafCurrent.setLeaf( rt_temp, 0, cal ); //set initial attributes

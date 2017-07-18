@@ -3,14 +3,15 @@ import java.io.*;
 import java.util.*;
 
 import ij.*;
+import ij.io.OpenDialog;
 import ij.io.SaveDialog;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import net.larla.leafy.common.*;
-import net.larla.leafy.datatypes.*;
 import net.larla.leafy.helpers.*;
 
 public class Batch_Analyzer extends Leafy implements PlugIn {
+    String trainfolder = "";
 
     @Override
     public void run( String arg ) {
@@ -18,14 +19,15 @@ public class Batch_Analyzer extends Leafy implements PlugIn {
 	//LeafClassifier lc = new LeafClassifier();
 	String groundTruth = "";
 	// process folder
-	String trainfolder = IJ.getDirectory("Select folder with training images...");
+	if (trainfolder.equals(""))
+	    trainfolder = IJ.getDirectory("Select folder with training images...");
 	if (trainfolder==null) 
 	    return;
 	String arffpath = trainfolder + "_leaf.arff";
 	File f = new File(arffpath);
-	HashMap<String,String> classmap = FileHelper.file2Map(trainfolder+"_classes.csv");
 
-	if(!f.exists() || f.isDirectory()) {  // TODO: Teste ob arff-Datei schon existiert
+	if(!f.exists() || f.isDirectory()) {	// wenn _leaf.arff nicht existiert: Merkmalsextraktion
+	    HashMap<String,String> classmap = FileHelper.file2Map(trainfolder+"_classes.csv");
 	    String[] imglist = new File(trainfolder).list();
 	    if (imglist==null) return;
 	    for (int i=0; i<imglist.length; i++) {
@@ -65,7 +67,7 @@ public class Batch_Analyzer extends Leafy implements PlugIn {
 		    la.analyze(img, imp_bin, groundTruth);
 		    
 
-		}
+		}	// TODO: was passiert wenn kein gültiger Ordner übergeben wurde?
 	    }
 	    IJ.showProgress(1.0);
 	    IJ.showStatus("");
@@ -86,7 +88,7 @@ public class Batch_Analyzer extends Leafy implements PlugIn {
 	    return;
 	}
 
-	LeafClassifier customClassifier = LeafClassifier.train(arffpath);
+	LeafClassifier customClassifier = LeafClassifier.train(arffpath, null);
 	
 	customClassifier.saveModel(dir4);
 
@@ -121,7 +123,16 @@ public class Batch_Analyzer extends Leafy implements PlugIn {
 	}
     }
     
-    
+    protected void parseArg(String arg) {
+	super.parseArg(arg);
+	String[] args = arg.split(",");
+	for(int i = 0; i < args.length; i++) {
+	    String[] dir = args[i].split("=");
+	    if (dir[0].equals("dir") && dir.length > 1) {
+		this.trainfolder = dir[1];
+	    }
+	}
+    }
     
     
 }

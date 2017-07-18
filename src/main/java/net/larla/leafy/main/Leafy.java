@@ -16,7 +16,6 @@ import net.larla.leafy.datatypes.Tuple;
 public class Leafy {
 
     static boolean showContours = true;
-    String modelpath = "";
     boolean findPetiole = true;
     boolean verbose = true;
     boolean saveoverlayimg = false;
@@ -63,19 +62,8 @@ public class Leafy {
 	String[] args = arg.split(",");
 	for(int i = 0; i < args.length; i++) {
 	    switch (args[i]) {
-	    case "custom":	    
-		OpenDialog od = new OpenDialog("Select classifier...", OpenDialog.getLastDirectory(), "boosted.model");
-		this.modelpath = od.getDirectory() + od.getFileName();
-		break;
-		/*case "genus":
-	    this.modelpath = "genus";
-	    break;
-	case "species":
-	    this.modelpath = "species";
-	    break;*/
 	    case "withoutpetiole":
 		this.findPetiole = false;
-		this.modelpath = "wopet";
 		break;
 	    case "saveoverlayimg":
 		this.saveoverlayimg = true;

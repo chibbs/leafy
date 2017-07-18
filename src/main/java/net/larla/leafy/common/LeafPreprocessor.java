@@ -23,14 +23,7 @@ public class LeafPreprocessor {
 	
 	imp_bin = LeafPreprocessor.convertToBinary(imp_gray, title);
 	LeafPreprocessor.smoothBinary(imp_bin);
-	
-	//imp = LeafPreprocessor.cropImage(imp, imp_bin.getRoi()); //Reihenfolge! 
-	//imp_gray = LeafPreprocessor.cropImage(imp_gray,
-	//imp_bin.getRoi()); // Reihenfolge! 
-	//imp_bin = LeafPreprocessor.cropImage(imp_bin); 
-	//bp_bin = (ByteProcessor) imp_bin.getProcessor();
-	//IJ.run( "Create Selection" );
-	
+		
 	return imp_bin;
     }
 
@@ -41,21 +34,27 @@ public class LeafPreprocessor {
         cp.setRGBWeights( 0, 0, 1 );    
         ByteProcessor bp_gray = cp.convertToByteProcessor();
         ImagePlus imp_gray = new ImagePlus(title + " (grayscale)", bp_gray);
+        //imp_gray.show();
         return imp_gray;
     }
 
     public static ImagePlus convertToBinary(ImagePlus imp_gray, String title) {
         ImageProcessor bp_gray = imp_gray.getProcessor();
         
-        int th = bp_gray.getAutoThreshold();
+        int th = bp_gray.getAutoThreshold();	// TODO: Isodata explizit festlegen
         //IJ.log( "Creating binary image... Threshold: " + th );
         ByteProcessor bp_bin = (ByteProcessor) bp_gray.duplicate();
         bp_bin.threshold( th );     // background = white (needed for erode/dilate)      -> IsoData algorithm
-
+        
+        
+        ByteProcessor bp_bin2 = (ByteProcessor) bp_gray.duplicate();
+        bp_bin2.setAutoThreshold(ImageProcessor.ISODATA, ImageProcessor.BLACK_AND_WHITE_LUT);	// ändert nicht wirklich die Pixelwerte, sondern nur die LUT (?)
+        
         //bp_bin.setBackgroundValue( 255 );   // used for rotate and scale
         //bp_bin.setAutoThreshold(bp.ISODATA, bp.OVER_UNDER_LUT );
 
         ImagePlus imp_bin = new ImagePlus(title + " (binarized)", bp_bin);
+        //imp_bin.show();
         return imp_bin;
     }
 
@@ -69,8 +68,8 @@ public class LeafPreprocessor {
         IJ.run(imp_bin, "Fill Holes", "");
         imp_bin.updateAndDraw();
         
-        bp_bin.erode();
-        bp_bin.dilate();
+        //bp_bin.erode();
+        //bp_bin.dilate();
 
         IJ.setBackgroundColor( 255, 255, 255 );
         imp_bin.updateAndDraw();
@@ -88,12 +87,12 @@ public class LeafPreprocessor {
 	// attention: 4-neighbourhood may cause problems with wand (start point of particle may not be connected) -> problem when using morphologic closing
 	// 8-neighbourhood may cause problems with blade segmentation (line between petiole and blade is too narrow, intersection may not be recognized)
 	int minThresh, maxThresh;
-	double maxarea = 0;
 	
 	// analyze particles and find biggest
 	ResultsTable rt_temp = new ResultsTable();
 	ParticleAnalyzer pat = new ParticleAnalyzer(
-		ParticleAnalyzer.INCLUDE_HOLES+
+		ParticleAnalyzer.INCLUDE_HOLES +
+		ParticleAnalyzer.FOUR_CONNECTED +
 		ParticleAnalyzer.RECORD_STARTS, 
 		Measurements.AREA + Measurements.CENTROID, 
 		rt_temp, 10, Double.POSITIVE_INFINITY, 0, 1);
@@ -101,10 +100,11 @@ public class LeafPreprocessor {
 
 	int counter = rt_temp.getCounter();  //number of results
 	if (counter==0) {
-	    throw new IllegalStateException("Segmentation Error: No Regions Not Found!");
+	    throw new IllegalStateException("Segmentation Error: No Regions Found!");
 	}
 	int maxrow = 0;
 	if (counter > 1) {
+	    double maxarea = 0;
 	    int col = rt_temp.getColumnIndex("Area");
 
 	    for (int row=0; row<counter; row++) {
@@ -124,10 +124,10 @@ public class LeafPreprocessor {
 			rt_temp.getColumnIndex("YStart"), maxrow));
 	Roi r = imp_bin.getRoi();
 
-	ImageProcessor ip = imp_bin.getProcessor();
-	Wand w = new Wand(ip);
-	int thresh = ip.getAutoThreshold();
-	double bg = ip.getBackgroundValue();
+	ByteProcessor bp_bin = (ByteProcessor) imp_bin.getProcessor();
+	Wand w = new Wand(bp_bin);
+	int thresh = bp_bin.getAutoThreshold();
+	double bg = bp_bin.getBackgroundValue();
 	if (thresh > bg) {
 	    minThresh = thresh;
 	    maxThresh = 255;

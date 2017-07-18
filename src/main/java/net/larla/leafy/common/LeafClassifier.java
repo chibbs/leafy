@@ -10,6 +10,7 @@ import ij.measure.ResultsTable;
 import net.larla.leafy.datatypes.Leaf;
 import net.larla.leafy.datatypes.Tuple;
 import net.larla.leafy.helpers.*;
+import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Classifier;
 import weka.classifiers.evaluation.Evaluation;
 import weka.classifiers.meta.AdaBoostM1;
@@ -73,10 +74,9 @@ public class LeafClassifier {
 	}
 	this.classifier = (Classifier) v.get(0);
 	this.header = (Instances) v.get(1);
-
     }
 
-    public static LeafClassifier train(String datapath) {
+    public static LeafClassifier train(String datapath, String type) {
 	if (verbose) IJ.log("Training classifier with data from " + datapath + "...");
 
 	// load training data from csv
@@ -93,6 +93,15 @@ public class LeafClassifier {
 	//data.setClassIndex(data.numAttributes() - 1);
 
 	// train Tree
+	/*if (type == null || type.equals("")) {
+	    type = "weka.classifiers.meta.AdaBoostM1"; // Standard classifier type
+	}
+	try {
+	    Classifier cl = AbstractClassifier.forName(type, null);
+	    System.out.println(cl.toString());
+	} catch (Exception e1) {
+	    // nicht so schlimm, nur Test
+	}*/
 	AdaBoostM1 ab = new AdaBoostM1();
 	ab.setClassifier(new J48());
 	ab.setNumIterations(100);
@@ -235,6 +244,40 @@ public class LeafClassifier {
 	}
 
 	IJ.log("\tWrote classifier to " + modelpath);
+    }
+    
+    public String predictSingle() {
+	String rootPath="C:/Users/Laura/Desktop/"; 
+	Classifier cls;
+	String prediction;
+	try {
+	    cls = (Classifier) weka.core.SerializationHelper.read(rootPath+"tree.model");
+	} catch (Exception e1) {
+	    // TODO Auto-generated catch block
+	    e1.printStackTrace();
+	    throw new UnsupportedOperationException("Could not load model. Fehler: " + e1.getLocalizedMessage());
+	}
+
+	//predict instance class values
+	Instances originalTrain= WekaHelper.buildInstances(ResultsTable.getResultsTable());
+
+	//which instance to predict class value
+	int s1 = 0;  
+	
+	Instance i3 = originalTrain.instance(s1);
+
+	//perform your prediction
+	double value;
+	try {
+	    value = cls.classifyInstance(i3);
+	} catch (Exception e) {
+	    throw new UnsupportedOperationException("Classification not possible. Fehler: " + e.getLocalizedMessage());
+	}
+
+	//get the name of the class value
+	prediction=originalTrain.classAttribute().value((int)value); 
+
+	return prediction;
     }
 
 }
